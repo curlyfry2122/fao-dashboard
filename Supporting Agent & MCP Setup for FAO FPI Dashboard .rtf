@@ -1,0 +1,626 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Bold;\f1\froman\fcharset0 Times-Roman;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sa321\partightenfactor0
+
+\f0\b\fs48 \cf0 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Supporting Agent & MCP Setup for FAO FPI Dashboard\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\fs36 \cf0 Recommended MCP Servers\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\fs28 \cf0 1. Filesystem MCP Server (Essential)\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 \strokec2 Purpose
+\f1\b0 \strokec2 : Direct file manipulation for code generation and testing\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 # Installation\
+npm install -g @modelcontextprotocol/server-filesystem\
+\
+# Configuration in Claude Desktop config\
+\{\
+  "mcpServers": \{\
+    "filesystem": \{\
+      "command": "npx",\
+      "args": [\
+        "-y",\
+        "@modelcontextprotocol/server-filesystem",\
+        "/path/to/fao-dashboard"\
+      ]\
+    \}\
+  \}\
+\}\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 2. GitHub MCP Server (Recommended)\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 \strokec2 Purpose
+\f1\b0 \strokec2 : Automated commits, PR creation, and version control\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 # Installation\
+npm install -g @modelcontextprotocol/server-github\
+\
+# Setup with personal access token\
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token_here"\
+\{\
+  "mcpServers": \{\
+    "github": \{\
+      "command": "npx",\
+      "args": ["-y", "@modelcontextprotocol/server-github"],\
+      "env": \{\
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_token_here"\
+      \}\
+    \}\
+  \}\
+\}\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\f0\b\fs36 \cf0 Specialized Agent Configurations\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\fs28 \cf0 Agent 1: Data Monitor Agent\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 \strokec2 Purpose
+\f1\b0 \strokec2 : Validates FAO data availability and structure changes\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 # monitor_agent.py\
+"""\
+Autonomous agent that checks FAO data source daily.\
+Runs via GitHub Actions or local cron.\
+"""\
+\
+AGENT_PROMPT = """\
+You are a data monitoring agent for the FAO FPI Dashboard.\
+\
+DAILY TASKS:\
+1. Check if URL https://www.fao.org/fileadmin/templates/worldfood/Reports_and_docs/Food_price_indices_data.xls is accessible\
+2. Download and verify Excel structure matches expected schema\
+3. Compare row count with previous day\
+4. Check for data anomalies (e.g., values > 300 or < 50)\
+5. Generate report in JSON format\
+\
+OUTPUT FORMAT:\
+\{\
+  "timestamp": "ISO-8601",\
+  "status": "OK|WARNING|ERROR",\
+  "checks": \{\
+    "url_accessible": bool,\
+    "structure_valid": bool,\
+    "row_count": int,\
+    "anomalies": []\
+  \},\
+  "action_required": bool,\
+  "message": "string"\
+\}\
+\
+If action_required is true, create GitHub issue with details.\
+"""\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b\fs24 \cf0 \strokec2 Setup Instructions
+\f1\b0 \strokec2 :\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 # 1. Create monitoring script\
+cat > .github/scripts/monitor_data.py << 'EOF'\
+import requests\
+import pandas as pd\
+from datetime import datetime\
+import json\
+import sys\
+\
+def check_fao_data():\
+    # Implementation based on AGENT_PROMPT specs\
+    result = \{"timestamp": datetime.now().isoformat()\}\
+    # ... monitoring logic\
+    return result\
+\
+if __name__ == "__main__":\
+    result = check_fao_data()\
+    print(json.dumps(result))\
+    sys.exit(0 if result["status"] == "OK" else 1)\
+EOF\
+\
+# 2. Add to GitHub Actions\
+cat > .github/workflows/monitor.yml << 'EOF'\
+name: Monitor FAO Data\
+on:\
+  schedule:\
+    - cron: '0 8 * * *'  # Daily at 8 AM UTC\
+  workflow_dispatch:\
+\
+jobs:\
+  monitor:\
+    runs-on: ubuntu-latest\
+    steps:\
+      - uses: actions/checkout@v3\
+      - uses: actions/setup-python@v4\
+        with:\
+          python-version: '3.11'\
+      - run: pip install requests pandas openpyxl\
+      - run: python .github/scripts/monitor_data.py\
+      - if: failure()\
+        uses: actions/github-script@v6\
+        with:\
+          script: |\
+            github.rest.issues.create(\{\
+              owner: context.repo.owner,\
+              repo: context.repo.repo,\
+              title: 'FAO Data Source Issue Detected',\
+              body: 'Automated monitoring detected an issue. Check logs.'\
+            \})\
+EOF\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 Agent 2: Test Generator Agent\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 \strokec2 Purpose
+\f1\b0 \strokec2 : Automatically generates test cases for new functions\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 TEST_GENERATOR_PROMPT = """\
+You are a test generation agent for Python code.\
+\
+When given a function, generate comprehensive pytest tests:\
+\
+REQUIREMENTS:\
+1. Test happy path\
+2. Test edge cases (empty, None, invalid types)\
+3. Test boundary conditions\
+4. Use pytest fixtures for setup\
+5. Include parametrized tests where applicable\
+6. Mock external dependencies\
+7. Aim for 95% code coverage\
+\
+OUTPUT FORMAT:\
+- Filename: test_\{original_filename\}.py\
+- Include imports\
+- Include fixtures\
+- Include at least 5 test cases per function\
+- Add comments explaining what each test validates\
+\
+EXAMPLE:\
+For function: def calculate_yoy_change(current, previous): ...\
+Generate: test_calculate_yoy_change() with cases for positive, negative, zero, None values\
+"""\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b\fs24 \cf0 \strokec2 Integration with Claude Code
+\f1\b0 \strokec2 :\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 # Create test generation script\
+cat > generate_tests.py << 'EOF'\
+#!/usr/bin/env python3\
+"""\
+Usage: python generate_tests.py <module_name>\
+Generates test file for the specified module\
+"""\
+import ast\
+import sys\
+\
+def extract_functions(filename):\
+    with open(filename, 'r') as f:\
+        tree = ast.parse(f.read())\
+    return [node.name for node in ast.walk(tree) \
+            if isinstance(node, ast.FunctionDef)]\
+\
+def generate_test_prompt(module, functions):\
+    return f"""\
+Generate pytest tests for \{module\}.py with these functions:\
+\{', '.join(functions)\}\
+\
+Follow TEST_GENERATOR_PROMPT guidelines.\
+Each function needs minimum 5 test cases.\
+Include edge cases and error conditions.\
+"""\
+\
+if __name__ == "__main__":\
+    module = sys.argv[1]\
+    functions = extract_functions(f"\{module\}.py")\
+    print(generate_test_prompt(module, functions))\
+EOF\
+\
+chmod +x generate_tests.py\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 Agent 3: Performance Profiler Agent\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 \strokec2 Purpose
+\f1\b0 \strokec2 : Continuously monitors dashboard performance\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 PROFILER_PROMPT = """\
+You are a performance profiling agent for Streamlit applications.\
+\
+MONITORING TASKS:\
+1. Measure page load time\
+2. Track memory usage\
+3. Monitor cache hit rates\
+4. Identify slow operations (>1s)\
+5. Generate optimization suggestions\
+\
+For any operation taking >3 seconds, generate refactoring suggestion.\
+\
+OUTPUT: Performance report with specific code improvements.\
+"""\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b\fs24 \cf0 \strokec2 Setup with Selenium
+\f1\b0 \strokec2 :\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 # performance_monitor.py\
+cat > performance_monitor.py << 'EOF'\
+from selenium import webdriver\
+from selenium.webdriver.common.by import By\
+from selenium.webdriver.support.ui import WebDriverWait\
+import time\
+import psutil\
+import json\
+\
+class PerformanceMonitor:\
+    def __init__(self, url="http://localhost:8501"):\
+        self.url = url\
+        self.metrics = \{\}\
+    \
+    def measure_load_time(self):\
+        options = webdriver.ChromeOptions()\
+        options.add_argument('--headless')\
+        driver = webdriver.Chrome(options=options)\
+        \
+        start = time.time()\
+        driver.get(self.url)\
+        WebDriverWait(driver, 10).until(\
+            lambda d: d.find_element(By.TAG_NAME, "canvas")\
+        )\
+        load_time = time.time() - start\
+        \
+        # Get performance metrics\
+        perf = driver.execute_script("return window.performance.timing")\
+        \
+        driver.quit()\
+        return \{\
+            "total_load_time": load_time,\
+            "dom_ready": perf['domContentLoadedEventEnd'] - perf['navigationStart'],\
+            "recommendations": self.generate_recommendations(load_time)\
+        \}\
+    \
+    def generate_recommendations(self, load_time):\
+        if load_time > 3:\
+            return ["Consider implementing lazy loading", \
+                    "Check DataFrame operations efficiency",\
+                    "Verify caching is working"]\
+        return ["Performance is acceptable"]\
+\
+monitor = PerformanceMonitor()\
+print(json.dumps(monitor.measure_load_time(), indent=2))\
+EOF\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\f0\b\fs36 \cf0 MCP Server for Data Updates\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\fs28 \cf0 Custom FAO Data MCP Server\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 \strokec2 Purpose
+\f1\b0 \strokec2 : Specialized server for FAO data operations\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 // fao-mcp-server.js\
+import \{ Server \} from '@modelcontextprotocol/sdk/server/index.js';\
+import \{ StdioServerTransport \} from '@modelcontextprotocol/sdk/server/stdio.js';\
+import axios from 'axios';\
+import * as XLSX from 'xlsx';\
+\
+const FAO_URL = 'https://www.fao.org/fileadmin/templates/worldfood/Reports_and_docs/Food_price_indices_data.xls';\
+\
+class FAODataServer \{\
+  constructor() \{\
+    this.server = new Server(\
+      \{\
+        name: 'fao-data-server',\
+        version: '1.0.0',\
+      \},\
+      \{\
+        capabilities: \{\
+          tools: \{\},\
+        \},\
+      \}\
+    );\
+\
+    this.setupTools();\
+  \}\
+\
+  setupTools() \{\
+    this.server.setRequestHandler('tools/list', async () => (\{\
+      tools: [\
+        \{\
+          name: 'fetch_fao_data',\
+          description: 'Fetch latest FAO FPI data',\
+          inputSchema: \{\
+            type: 'object',\
+            properties: \{\
+              format: \{\
+                type: 'string',\
+                enum: ['json', 'csv', 'excel'],\
+                default: 'json'\
+              \}\
+            \}\
+          \}\
+        \},\
+        \{\
+          name: 'check_data_updates',\
+          description: 'Check if new data is available',\
+          inputSchema: \{\
+            type: 'object',\
+            properties: \{\}\
+          \}\
+        \},\
+        \{\
+          name: 'get_latest_values',\
+          description: 'Get most recent FPI values',\
+          inputSchema: \{\
+            type: 'object',\
+            properties: \{\
+              indices: \{\
+                type: 'array',\
+                items: \{ type: 'string' \}\
+              \}\
+            \}\
+          \}\
+        \}\
+      ]\
+    \}));\
+\
+    this.server.setRequestHandler('tools/call', async (request) => \{\
+      const \{ name, arguments: args \} = request.params;\
+\
+      switch (name) \{\
+        case 'fetch_fao_data':\
+          return await this.fetchFAOData(args.format);\
+        case 'check_data_updates':\
+          return await this.checkUpdates();\
+        case 'get_latest_values':\
+          return await this.getLatestValues(args.indices);\
+        default:\
+          throw new Error(`Unknown tool: $\{name\}`);\
+      \}\
+    \});\
+  \}\
+\
+  async fetchFAOData(format) \{\
+    const response = await axios.get(FAO_URL, \{ responseType: 'arraybuffer' \});\
+    const workbook = XLSX.read(response.data);\
+    \
+    if (format === 'json') \{\
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];\
+      const json = XLSX.utils.sheet_to_json(sheet);\
+      return \{ content: [\{ type: 'text', text: JSON.stringify(json, null, 2) \}] \};\
+    \}\
+    \
+    // Handle other formats...\
+    return \{ content: [\{ type: 'text', text: 'Data fetched successfully' \}] \};\
+  \}\
+\
+  async checkUpdates() \{\
+    // Implementation to check last modified header\
+    const response = await axios.head(FAO_URL);\
+    const lastModified = response.headers['last-modified'];\
+    return \{ \
+      content: [\{ \
+        type: 'text', \
+        text: `Last updated: $\{lastModified\}` \
+      \}] \
+    \};\
+  \}\
+\
+  async getLatestValues(indices) \{\
+    // Fetch and return latest values for specified indices\
+    const data = await this.fetchFAOData('json');\
+    // Process and return latest values...\
+    return \{ content: [\{ type: 'text', text: 'Latest values retrieved' \}] \};\
+  \}\
+\
+  async run() \{\
+    const transport = new StdioServerTransport();\
+    await this.server.connect(transport);\
+  \}\
+\}\
+\
+const server = new FAODataServer();\
+server.run().catch(console.error);\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b\fs24 \cf0 \strokec2 Setup Instructions
+\f1\b0 \strokec2 :\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 # 1. Initialize package\
+mkdir fao-mcp-server && cd fao-mcp-server\
+npm init -y\
+npm install @modelcontextprotocol/sdk axios xlsx\
+\
+# 2. Add to package.json\
+\{\
+  "type": "module",\
+  "bin": \{\
+    "fao-mcp-server": "./fao-mcp-server.js"\
+  \}\
+\}\
+\
+# 3. Make executable\
+chmod +x fao-mcp-server.js\
+\
+# 4. Add to Claude Desktop config\
+\{\
+  "mcpServers": \{\
+    "fao-data": \{\
+      "command": "node",\
+      "args": ["/path/to/fao-mcp-server/fao-mcp-server.js"]\
+    \}\
+  \}\
+\}\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\f0\b\fs36 \cf0 Orchestration Agent\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\fs28 \cf0 Master Orchestrator\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 \strokec2 Purpose
+\f1\b0 \strokec2 : Coordinates all agents and ensures smooth development flow\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 ORCHESTRATOR_PROMPT = """\
+You are the master orchestrator for the FAO FPI Dashboard project.\
+\
+RESPONSIBILITIES:\
+1. Monitor all agent outputs\
+2. Detect conflicts or issues\
+3. Prioritize tasks\
+4. Generate daily development plan\
+5. Track progress against milestones\
+\
+DAILY WORKFLOW:\
+1. Check data monitor agent status\
+2. Review test coverage reports\
+3. Analyze performance metrics\
+4. Generate priority task list\
+5. Create GitHub issues for blockers\
+\
+DECISION MATRIX:\
+- If data structure changes: Alert immediately, pause deployments\
+- If tests fail: Block PR merge, notify developer\
+- If performance degrades >20%: Trigger optimization agent\
+- If new FAO data available: Run update pipeline\
+\
+OUTPUT: Daily status report with action items prioritized by impact.\
+"""\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b\fs24 \cf0 \strokec2 GitHub Action Orchestration
+\f1\b0 \strokec2 :\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 # .github/workflows/orchestrate.yml\
+name: Daily Orchestration\
+on:\
+  schedule:\
+    - cron: '0 6 * * *'\
+  workflow_dispatch:\
+\
+jobs:\
+  orchestrate:\
+    runs-on: ubuntu-latest\
+    steps:\
+      - uses: actions/checkout@v3\
+      \
+      - name: Run Data Monitor\
+        id: monitor\
+        run: python .github/scripts/monitor_data.py\
+        \
+      - name: Check Test Coverage\
+        id: tests\
+        run: |\
+          pytest --cov=. --cov-report=json\
+          echo "coverage=$(cat coverage.json | jq .totals.percent_covered)" >> $GITHUB_OUTPUT\
+      \
+      - name: Performance Check\
+        id: performance\
+        run: python performance_monitor.py\
+      \
+      - name: Generate Daily Plan\
+        uses: actions/github-script@v6\
+        with:\
+          script: |\
+            const monitor = $\{\{ steps.monitor.outputs.result \}\};\
+            const coverage = $\{\{ steps.tests.outputs.coverage \}\};\
+            \
+            let priority = [];\
+            \
+            if (monitor.status !== 'OK') \{\
+              priority.push('\uc0\u55357 \u56628  URGENT: Data source issue');\
+            \}\
+            \
+            if (coverage < 80) \{\
+              priority.push('\uc0\u55357 \u57313  Increase test coverage (currently $\{coverage\}%)');\
+            \}\
+            \
+            // Create daily issue\
+            github.rest.issues.create(\{\
+              owner: context.repo.owner,\
+              repo: context.repo.repo,\
+              title: `Daily Status: $\{new Date().toISOString().split('T')[0]\}`,\
+              body: priority.join('\\n'),\
+              labels: ['daily-status']\
+            \});\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\f0\b\fs36 \cf0 Quick Setup Script\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b0\fs26 \cf0 #!/bin/bash\
+# setup_agents.sh\
+\
+echo "Setting up FAO Dashboard Agent Infrastructure..."\
+\
+# 1. Create project structure\
+mkdir -p fao-dashboard/\{agents,mcp-servers,.github/workflows\}\
+cd fao-dashboard\
+\
+# 2. Install MCP servers\
+npm install -g @modelcontextprotocol/server-filesystem\
+npm install -g @modelcontextprotocol/server-github\
+\
+# 3. Create agent configurations\
+cat > agents/config.json << 'EOF'\
+\{\
+  "agents": \{\
+    "data_monitor": \{\
+      "schedule": "0 */6 * * *",\
+      "enabled": true\
+    \},\
+    "test_generator": \{\
+      "trigger": "on_commit",\
+      "enabled": true\
+    \},\
+    "performance_profiler": \{\
+      "schedule": "0 0 * * *",\
+      "enabled": true\
+    \}\
+  \}\
+\}\
+EOF\
+\
+# 4. Set up Git hooks\
+cat > .git/hooks/pre-commit << 'EOF'\
+#!/bin/bash\
+python generate_tests.py $(git diff --cached --name-only | grep .py$ | sed 's/.py//')\
+EOF\
+chmod +x .git/hooks/pre-commit\
+\
+echo "\uc0\u9989  Agent infrastructure ready!"\
+echo "Next steps:"\
+echo "1. Configure Claude Desktop with MCP servers"\
+echo "2. Set GitHub secrets for Actions"\
+echo "3. Run: python agents/monitor_agent.py to test"\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\fs24 \cf0 These agents work together to maintain code quality, monitor data integrity, and ensure optimal performance throughout the development lifecycle.\
+}

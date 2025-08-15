@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.streamlit/secrets.toml
+*.xlsx
+*.xls
+.env
+venv/
+.coverage
+*.log
+.DS_Store
+cache/
