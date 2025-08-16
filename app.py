@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from data_pipeline import DataPipeline
+from chart_builder import build_chart
 
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
@@ -160,6 +161,21 @@ def main():
             
             st.markdown("---")
             
+            # Chart Type Selection
+            st.markdown("### 📊 Chart Type")
+            
+            chart_type = st.radio(
+                "Select chart type",
+                options=['Line Chart', 'Area Chart', 'Year-over-Year Change'],
+                index=0,
+                key="chart_type",
+                help="Choose how to visualize the selected indices"
+            )
+            
+            st.caption(f"📈 Displaying: {chart_type}")
+            
+            st.markdown("---")
+            
             st.markdown("### Data Options")
             st.write("Options for data selection and display preferences will be available here.")
             
@@ -177,12 +193,13 @@ def main():
                 selected_columns = [index_mapping[idx] for idx in selected_indices 
                                   if idx in index_mapping]
                 
-                # Create line chart with selected indices
+                # Create chart with selected indices
                 if selected_columns:
                     # Filter DataFrame to only include date and selected columns
                     available_columns = [col for col in selected_columns if col in df.columns]
                     
                     if available_columns:
+                        # Prepare data for chart
                         chart_data = df.set_index('date')[available_columns].copy()
                         
                         # Rename columns for display
@@ -190,7 +207,9 @@ def main():
                                        if col in available_columns}
                         chart_data.rename(columns=display_names, inplace=True)
                         
-                        st.line_chart(chart_data, height=400)
+                        # Build and display Plotly chart
+                        fig = build_chart(chart_data, chart_type, list(chart_data.columns))
+                        st.plotly_chart(fig, use_container_width=True)
                         
                         # Show data info
                         date_range = f"{df['date'].min().strftime('%Y-%m')} to {df['date'].max().strftime('%Y-%m')}"
