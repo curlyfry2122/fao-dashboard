@@ -1,0 +1,62 @@
+{
+  "test_file_prefix": "test_",
+  "test_class_prefix": "Test",
+  "mock_external_deps": true,
+  "generate_fixtures": true,
+  "include_edge_cases": true,
+  "test_timeout": 30,
+  "mock_patterns": [
+    "requests.",
+    "open(",
+    "urllib.",
+    "Path(",
+    "datetime.now",
+    "download_",
+    "fetch_",
+    "st.",
+    "streamlit.",
+    "pickle.load",
+    "pickle.dump"
+  ],
+  "exclude_patterns": [
+    "__pycache__",
+    ".git",
+    "venv",
+    ".pyc",
+    ".DS_Store"
+  ],
+  "fao_specific": {
+    "common_fixtures": [
+      "sample_fao_data",
+      "mock_excel_file",
+      "temp_cache_dir"
+    ],
+    "mock_data_patterns": {
+      "fao_data": {
+        "columns": ["date", "food_price_index", "meat", "dairy", "cereals", "oils", "sugar"],
+        "date_range": "2020-01-01 to 2023-12-01",
+        "frequency": "MS"
+      }
+    },
+    "test_scenarios": [
+      "successful_data_fetch",
+      "network_timeout",
+      "invalid_excel_structure",
+      "cache_corruption",
+      "empty_dataset",
+      "missing_columns"
+    ]
+  },
+  "test_templates": {
+    "class_test": {
+      "setup_method": true,
+      "teardown_method": false,
+      "mock_dependencies": true
+    },
+    "function_test": {
+      "parametrize_inputs": true,
+      "test_exceptions": true,
+      "test_edge_cases": true
+    }
+  }
+}
