@@ -1,14 +1,15 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2822
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Bold;\f1\fmodern\fcharset0 Courier-Oblique;\f2\fmodern\fcharset0 Courier;
-\f3\froman\fcharset0 Times-BoldItalic;\f4\froman\fcharset0 Times-Roman;}
+\f3\froman\fcharset0 Times-BoldItalic;\f4\fnil\fcharset0 AppleColorEmoji;\f5\froman\fcharset0 Times-Italic;
+\f6\froman\fcharset0 Times-Roman;}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
-\margl1440\margr1440\vieww10920\viewh7800\viewkind0
+\margl1440\margr1440\vieww11820\viewh8700\viewkind0
 \deftab720
 \pard\pardeftab720\sa321\partightenfactor0
 
 \f0\b\fs48 \cf0 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 FAO FPI Dashboard - Claude Code Generation Prompts\
+FAO FPI Dashboard - Claude Code Generation Prompts\
 \pard\pardeftab720\sa298\partightenfactor0
 
 \fs36 \cf0 Phase 1: Data Foundation\
@@ -45,7 +46,7 @@ Include docstrings and type hints.\
 \f0\i0\b\fs28 \cf0 \ulnone Prompt 1.2 - Validation Check\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Review the data_fetcher.py module. Add a validate_excel_structure() function that checks:\
+\f1\i\b0\fs26 \cf0 \ul Review the data_fetcher.py module. Add a validate_excel_structure() function that checks:\
 - File has expected sheets ('Annual', 'Monthly')\
 - Annual sheet has columns containing 'Food Price Index', 'Meat', 'Dairy', 'Cereals', 'Oils', 'Sugar'\
 - Returns bool and error message tuple\
@@ -60,7 +61,7 @@ Write tests for malformed Excel scenarios.
 \fs28 \cf0 Prompt 2.1 - Excel Parser\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Create `excel_parser.py` to extract data from FAO Excel file.\
+\f1\i\b0\fs26 \cf0 \ul Create `excel_parser.py` to extract data from FAO Excel file.\
 \
 INPUTS:\
 - BytesIO object from data_fetcher\
@@ -79,13 +80,14 @@ TESTS FIRST:\
 - Test with sample Excel data (3 rows)\
 - Test missing values handling\
 - Test date parsing edge cases\
-\ulnone \
+\pard\pardeftab720\partightenfactor0
+\cf0 \ulnone \
 \pard\pardeftab720\sa280\partightenfactor0
 
 \f0\i0\b\fs28 \cf0 Prompt 2.2 - Metrics Calculator\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Add a `calculate_metrics.py` module for derived fields.\
+\f1\i\b0\fs26 \cf0 \ul Add a `calculate_metrics.py` module for derived fields.\
 \
 INPUTS:\
 - DataFrame from excel_parser\
@@ -104,14 +106,24 @@ Write tests with 24 months of sample data verifying calculations.\
 \f0\i0\b\fs28 \cf0 \ulnone Prompt 2.3 - Data Pipeline Integration\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Create `data_pipeline.py` that chains: fetch -> parse -> calculate.\
+\f1\i\b0\fs26 \cf0 \ul Create `data_pipeline.py` that chains: fetch -> parse -> calculate.\
 \
 Add a DataPipeline class with:\
 - run() method returning processed DataFrame\
 - get_latest_update() returning timestamp\
 - cache management (1 hour TTL)\
 \
-Test the full pipeline with mocked fetcher.\ulnone \
+Test the full pipeline with mocked fetcher.\
+\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\i0\b\fs28 \cf0 After Phase 2:\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b0\fs26 \cf0 CHECK: Run data_pipeline.py standalone. Should output: "Successfully processed X records from YYYY to YYYY"\
+\pard\pardeftab720\partightenfactor0
+
+\f1\i \cf0 \ulnone \
 \pard\pardeftab720\sa298\partightenfactor0
 
 \f0\i0\b\fs36 \cf0 Phase 3: Streamlit Foundation\
@@ -120,7 +132,7 @@ Test the full pipeline with mocked fetcher.\ulnone \
 \fs28 \cf0 Prompt 3.1 - App Skeleton\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Create `app.py` with basic Streamlit structure:\
+\f1\i\b0\fs26 \cf0 \ul Create `app.py` with basic Streamlit structure:\
 \
 REQUIREMENTS:\
 - Wide layout\
@@ -140,7 +152,7 @@ Test manually: streamlit run app.py should show layout.\
 \f0\i0\b\fs28 \cf0 \ulnone Prompt 3.2 - Data Loading Integration\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Modify app.py to:\
+\f1\i\b0\fs26 \cf0 \ul Modify app.py to:\
 - Import DataPipeline\
 - Add @st.cache_data decorator with 1hr TTL\
 - Load data on app start\
@@ -160,7 +172,7 @@ CONSTRAINTS:\
 \fs28 \cf0 Prompt 4.1 - Date Range Filter\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Add date range selector to sidebar:\
+\f1\i\b0\fs26 \cf0 \ul Add date range selector to sidebar:\
 \
 INPUTS:\
 - DataFrame with date column\
@@ -180,7 +192,7 @@ Test with different date ranges.\
 \f0\i0\b\fs28 \cf0 \ulnone Prompt 4.2 - Index Multi-Select\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Add index selection to sidebar:\
+\f1\i\b0\fs26 \cf0 \ul Add index selection to sidebar:\
 \
 REQUIREMENTS:\
 - Multi-select with options: ['Food Price Index', 'Meat', 'Dairy', 'Cereals', 'Oils', 'Sugar']\
@@ -196,7 +208,7 @@ CONSTRAINTS:\
 \f0\b\fs28 \cf0 Prompt 4.3 - Chart Type Selector\
 \pard\pardeftab720\partightenfactor0
 
-\f1\i\b0\fs26 \cf0 \ul \ulc0 Add chart type radio buttons:\
+\f1\i\b0\fs26 \cf0 \ul Add chart type radio buttons:\
 \
 OPTIONS:\
 - Line Chart\
@@ -209,17 +221,18 @@ REQUIREMENTS:\
 - Returns plotly figure\
 \
 Test each chart type with 2 indices selected.\
+\pard\pardeftab720\partightenfactor0
 
-\f2\i0 \ulnone \
+\f2\i0 \cf0 \ulnone \
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f3\i\b\fs28 \cf0 \ul \ulc0 \outl0\strokewidth0 After Phase 4:\
+\f3\i\b\fs28 \cf0 \ul After Phase 4:\
 \pard\pardeftab720\partightenfactor0
 
-\f1\b0\fs26 \cf0 \ulc0 CHECK: Can you select date range 2020-2023, choose Meat and Dairy indices, and see an area chart?\
+\f1\b0\fs26 \cf0 CHECK: Can you select date range 2020-2023, choose Meat and Dairy indices, and see an area chart?\
 \pard\pardeftab720\partightenfactor0
 
-\f2\i0 \cf0 \ulnone \outl0\strokewidth0 \strokec2 \
+\f2\i0 \cf0 \ulnone \
 \pard\pardeftab720\sa298\partightenfactor0
 
 \f0\b\fs36 \cf0 Phase 5: Statistical Summary\
@@ -228,7 +241,7 @@ Test each chart type with 2 indices selected.\
 \fs28 \cf0 Prompt 5.1 - KPI Cards\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Create a `kpi_calculator.py` module:\
+\f1\i\b0\fs26 \cf0 \ul Create a `kpi_calculator.py` module:\
 \
 INPUTS:\
 - Filtered DataFrame\
@@ -241,10 +254,10 @@ Add KPI cards row below chart using st.metric().\
 Include delta and delta_color parameters.\
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f0\b\fs28 \cf0 Prompt 5.2 - Summary Statistics Table\
+\f0\i0\b\fs28 \cf0 \ulnone Prompt 5.2 - Summary Statistics Table\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Add expandable statistics section:\
+\f1\i\b0\fs26 \cf0 \ul Add expandable statistics section:\
 \
 REQUIREMENTS:\
 - Use st.expander("Detailed Statistics")\
@@ -253,15 +266,20 @@ REQUIREMENTS:\
 - Include sparkline column\
 \
 Use st.dataframe with column_config for formatting.\
+\pard\pardeftab720\partightenfactor0
+
+\f2\i0 \cf0 \ulnone \
+\
 \pard\pardeftab720\sa298\partightenfactor0
 
 \f0\b\fs36 \cf0 Phase 6: Export Functionality\
 \pard\pardeftab720\sa280\partightenfactor0
 
-\fs28 \cf0 Prompt 6.1 - Excel Exporter Core\
+\fs28 \cf0 Prompt 6.1 - 
+\f3\i Excel Exporter Core\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Create `excel_exporter.py` with ExcelExporter class:\
+\f1\b0\fs26 \cf0 \ul Create `excel_exporter.py` with ExcelExporter class:\
 \
 METHOD: generate_data_sheet(df, sheet_name)\
 - Adds DataFrame to Excel with formatting\
@@ -272,13 +290,16 @@ METHOD: generate_data_sheet(df, sheet_name)\
 TESTS:\
 - Verify sheet creation\
 - Check formatting applied\
-- Test with empty DataFrame\
+- Test with empty DataFrame\ulnone \
+\pard\pardeftab720\partightenfactor0
+
+\f2\i0 \cf0 \
 \pard\pardeftab720\sa280\partightenfactor0
 
 \f0\b\fs28 \cf0 Prompt 6.2 - Chart Embedding\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Extend ExcelExporter with add_chart_sheet():\
+\f1\i\b0\fs26 \cf0 \ul Extend ExcelExporter with add_chart_sheet():\
 \
 INPUTS:\
 - Plotly figure object\
@@ -292,40 +313,48 @@ CONSTRAINTS:\
 - Max image size 800x600\
 - Fall back to data-only if image fails\
 \
-Test with sample plotly figure.\
+Test with sample plotly figure.\ulnone \
+\pard\pardeftab720\partightenfactor0
+
+\f2\i0 \cf0 \
 \pard\pardeftab720\sa280\partightenfactor0
 
 \f0\b\fs28 \cf0 Prompt 6.3 - Download Button Integration\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Add Excel download to sidebar:\
+\f1\i\b0\fs26 \cf0 \ul Adjust the Excel download button on sidebar as follows:\
 \
 REQUIREMENTS:\
-- Button: "\uc0\u55357 \u56522  Export to Excel"\
-- Include: filtered data, current chart, statistics\
+- Button: "
+\f4\i0 \uc0\u55357 \u56522 
+\f1\i  Export to Excel"\
+- Include: filtered data, current chart, statistics, proper data types revised if needed to display properly\
 - Filename: FPI_Report_YYYYMMDD.xlsx\
 - Progress bar during generation\
 \
-Use st.download_button with generated bytes.\
-\
+Use st.download_button with generated bytes.\ulnone \
+\pard\pardeftab720\partightenfactor0
+
+\f2\i0 \cf0 \
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f0\b\fs28 \cf0 \outl0\strokewidth0 After Phase 6:\
+\f0\b\fs28 \cf0 After Phase 6:\
 \pard\pardeftab720\partightenfactor0
 
 \f2\b0\fs26 \cf0 CHECK: Download Excel file. Open and verify: data sheet has formatting, chart sheet has image, stats sheet has summaries.\
-\pard\pardeftab720\partightenfactor0
-\cf0 \outl0\strokewidth0 \strokec2 \
+\
+\
 \
 \pard\pardeftab720\sa298\partightenfactor0
 
 \f0\b\fs36 \cf0 Phase 7: Pivot Table\
 \pard\pardeftab720\sa280\partightenfactor0
 
-\fs28 \cf0 Prompt 7.1 - Pivot Interface\
+\fs28 \cf0 Prompt 7.1 - 
+\f3\i Pivot Interface\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Create pivot_builder.py with interactive pivot:\
+\f1\b0\fs26 \cf0 \ul Create pivot_builder.py with interactive pivot:\
 \
 REQUIREMENTS:\
 - Row dimension selector (Year, Quarter, Month)\
@@ -334,27 +363,56 @@ REQUIREMENTS:\
 - Use st_aggrid for display\
 \
 CONSTRAINTS:\
-- Max 1000 cells to prevent browser crash\
+- Max 1000 cells to prevent browser crash
+\f2\i0 \ulnone \
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f0\b\fs28 \cf0 Prompt 7.2 - Pivot Export\
+\f0\b\fs28 \cf0 Prompt 7.2 - 
+\f3\i Pivot Export\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Add "Export Pivot" button that:\
+\f1\b0\fs26 \cf0 Add "Export Pivot" button that:\
 - Converts AgGrid to DataFrame\
 - Applies Excel table formatting\
 - Includes in Excel export\
 \
-Test with various pivot configurations.\
+Test with various pivot configurations
+\f2\i0 \
+\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f4\fs28 \cf0 \ul \uc0\u55357 \u56525 
+\f3\i\b  Phase 7 (Pivot Table)\
+\pard\pardeftab720\sa319\partightenfactor0
+
+\fs24 \cf0 6. Custom FAO Data MCP Server 
+\f4\i0\b0 \uc0\u55357 \u57314 
+\f3\i\b \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 When
+\f5\b0 : During Phase 7\uc0\u8232 
+\f3\b Why
+\f5\b0 : Advanced feature, helps with complex data operations\
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs26 \cf0 Integration Prompt:\
+"Implement the custom FAO MCP server to enhance pivot operations:\
+1. Create fao-mcp-server package\
+2. Implement fetch_fao_data, check_updates, get_latest_values tools\
+3. Integrate with pivot table for real-time data\
+4. Add to Claude Desktop config"
+\f2\i0 \ulnone \
+\
 \pard\pardeftab720\sa298\partightenfactor0
 
 \f0\b\fs36 \cf0 Phase 8: Advanced Features\
 \pard\pardeftab720\sa280\partightenfactor0
 
-\fs28 \cf0 Prompt 8.1 - Correlation Matrix\
+\fs28 \cf0 \ul Prompt 8.1 - 
+\f3\i Correlation Matrix\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Add correlation analysis tab:\
+\f1\b0\fs26 \cf0 Add correlation analysis tab:\
 \
 REQUIREMENTS:\
 - Calculate correlation between indices\
@@ -362,13 +420,15 @@ REQUIREMENTS:\
 - Time period selector\
 - Export to Excel option\
 \
-Use st.tabs to separate from main view.\
+Use st.tabs to separate from main view.
+\f2\i0 \
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f0\b\fs28 \cf0 Prompt 8.2 - Anomaly Detection\
+\f0\b\fs28 \cf0 \ulnone Prompt 8.2 - 
+\f3\i \ul Anomaly Detection\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Add anomaly highlighting:\
+\f1\b0\fs26 \cf0 Add anomaly highlighting:\
 \
 REQUIREMENTS:\
 - Calculate 2-sigma bands\
@@ -376,7 +436,32 @@ REQUIREMENTS:\
 - Optional toggle in sidebar\
 - Different color for high/low anomalies\
 \
-Test with historical spike periods.\
+Test with historical spike periods.\ulnone \
+\pard\pardeftab720\partightenfactor0
+
+\f2\i0 \cf0 \
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f0\b\fs24 \cf0 7. Orchestrator Agent 
+\f4\b0 \uc0\u55357 \u57314 
+\f0\b \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 When
+\f6\b0 : Start of Phase 8\uc0\u8232 
+\f0\b Why
+\f6\b0 : Multiple agents now exist, need coordination\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 Integration \ul Prompt:\
+"
+\f1\i Set up the orchestrator to manage all agents:\
+1. Create orchestrator configuration\
+2. Set up recurring GitHub Action workflow\
+3. Configure priority matrix for issues\
+4. Test with triggering all agents\
+5. Set up status report generation
+\f2\i0 "\ulnone \
+\
 \pard\pardeftab720\sa298\partightenfactor0
 
 \f0\b\fs36 \cf0 Phase 9: Deployment\
@@ -385,7 +470,7 @@ Test with historical spike periods.\
 \fs28 \cf0 Prompt 9.1 - Requirements File\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Generate requirements.txt with:\
+\f1\i\b0\fs26 \cf0 \ul Update requirements.txt with:\
 - Exact versions for all packages\
 - Include optional dependencies commented\
 - Add deployment instructions in comments\
@@ -393,13 +478,14 @@ Test with historical spike periods.\
 Verify with fresh virtualenv installation.\
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f0\b\fs28 \cf0 Prompt 9.2 - GitHub Actions Workflow\
+\f0\i0\b\fs28 \cf0 \ulnone Prompt 9.2 - 
+\f3\i \ul GitHub Actions Workflow\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Create .github/workflows/update_cache.yml:\
+\f1\b0\fs26 \cf0 Create .github/workflows/update_cache.yml:\
 \
 TRIGGERS:\
-- Monthly on 5th at 12:00 UTC\
+- Monthly on 15th at 12:00 UTC\
 - Manual workflow_dispatch\
 \
 ACTIONS:\
@@ -407,28 +493,30 @@ ACTIONS:\
 - Commit cached data\
 - Create release tag\
 \
-Test with act tool locally.\
+Test with act tool locally.
+\f2\i0 \ulnone \
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f0\b\fs28 \cf0 Prompt 9.3 - Streamlit Config\
+\f0\b\fs28 \cf0 Prompt 9.3 - 
+\f3\i \ul Streamlit Config\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 Create .streamlit/config.toml with:\
+\f1\b0\fs26 \cf0 Create .streamlit/config.toml with:\
 - Theme settings\
 - Max upload size\
 - Custom favicon\
 - Wide mode default\
 \
 Also create Procfile for deployment.\
-\
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f0\b\fs28 \cf0 \outl0\strokewidth0 After Phase 9:\
+\f2\i0 \cf0 \ulnone \
+
+\f0\b\fs28 After Phase 9:\
 \pard\pardeftab720\partightenfactor0
 
 \f2\b0\fs26 \cf0 CHECK: Deploy to Streamlit Cloud. Access from mobile browser. All features should work except Excel download on iOS Safari.\
-\pard\pardeftab720\partightenfactor0
-\cf0 \outl0\strokewidth0 \strokec2 \
+\
 \
 \pard\pardeftab720\sa298\partightenfactor0
 
@@ -461,13 +549,7 @@ Create benchmark.py to test with full historical data.\
 \f0\b\fs36 \cf0 Validation Checkpoints\
 \pard\pardeftab720\sa280\partightenfactor0
 
-\fs28 \cf0 \ul \ulc0 After Phase 2:\
-\pard\pardeftab720\partightenfactor0
-
-\f2\b0\fs26 \cf0 \ulc0 CHECK: Run data_pipeline.py standalone. Should output: "Successfully processed X records from YYYY to YYYY"\
-\pard\pardeftab720\sa280\partightenfactor0
-
-\f0\b\fs28 \cf0 \ulnone \
+\fs28 \cf0 \
 Final Validation:\
 \pard\pardeftab720\partightenfactor0
 
@@ -482,5 +564,5 @@ Final Validation:\
 Expected: Complete report generated in <5 seconds with all data and charts.\
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f4\fs24 \cf0 Each prompt is designed to be atomic, testable, and builds on previous work without requiring the full codebase context.\
+\f6\fs24 \cf0 Each prompt is designed to be atomic, testable, and builds on previous work without requiring the full codebase context.\
 }

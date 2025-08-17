@@ -1,0 +1,145 @@
+# Streamlit Configuration for FAO Food Price Index Dashboard
+# This file configures the Streamlit app behavior, theme, and performance settings
+# Documentation: https://docs.streamlit.io/library/advanced-features/configuration
+
+[global]
+# Development mode settings
+developmentMode = false
+logLevel = "info"
+unitTest = false
+
+# Data settings
+dataFrameSerialization = "arrow"  # Use Apache Arrow for better performance
+maxCachedMessageAge = 3600  # Cache messages for 1 hour (matching app.py cache)
+
+[logger]
+# Logging configuration
+level = "info"
+messageFormat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+[client]
+# Client-side configuration
+caching = true
+displayEnabled = true
+showErrorDetails = true
+toolbarMode = "minimal"  # Clean toolbar for production
+
+[runner]
+# Script runner configuration
+magicEnabled = true
+installTracer = false
+fixMatplotlib = true
+postScriptGC = true  # Garbage collection after script runs
+fastReruns = true  # Enable fast reruns for better UX
+
+# Memory management
+maxMessageSize = 1000  # MB - Large enough for FAO data exports
+maxUploadSize = 500    # MB - Allow large Excel uploads
+maxCachedMessageAge = 3600  # 1 hour cache (matching app data cache)
+
+[server]
+# Server configuration
+runOnSave = false  # Disable auto-rerun on file save in production
+allowRunOnSave = false
+port = 8501
+baseUrlPath = ""
+enableCORS = false
+enableXsrfProtection = true
+maxUploadSize = 500  # MB - Must match runner.maxUploadSize
+
+# Security settings
+enableStaticServing = true
+enableWebsocketCompression = true
+
+# Performance optimization
+fileWatcherType = "auto"
+headless = false
+
+[browser]
+# Browser and UI configuration
+serverAddress = "localhost"
+gatherUsageStats = true  # Anonymous usage stats for Streamlit improvement
+serverPort = 8501
+
+[mapbox]
+# Mapbox token (not used in FAO dashboard, but included for completeness)
+token = ""
+
+[deprecation]
+# Handle deprecation warnings
+showfileUploaderEncoding = false
+showImageFormat = false
+showPyplotGlobalUse = false
+
+[theme]
+# Custom theme matching FAO color scheme and professional dashboard appearance
+# FAO Brand Colors: Blue (#1f77b4), Green (#2ca02c), Orange (#ff7f0e)
+
+# Primary colors
+primaryColor = "#1f77b4"        # FAO Blue - used for interactive elements
+backgroundColor = "#ffffff"     # Clean white background
+secondaryBackgroundColor = "#f8f9fa"  # Light gray for containers/sidebar
+
+# Text colors
+textColor = "#262730"          # Dark gray for main text
+
+# Base theme
+base = "light"                 # Light theme for professional appearance
+
+# Font configuration
+font = "sans serif"            # Clean, readable font for data dashboard
+
+[ui]
+# User interface settings
+hideTopBar = false
+hideSidebarNav = false
+
+# Layout defaults
+initialSidebarState = "expanded"  # Matches app.py configuration
+layout = "wide"                   # Wide layout for dashboard (matches app.py)
+
+[runner.timeout]
+# Timeout settings for long-running operations (important for FAO data fetching)
+scriptRunTimeout = 300  # 5 minutes for data pipeline operations
+widgetUpdateTimeout = 30  # 30 seconds for widget updates
+
+[runner.cache]
+# Caching configuration
+persistCacheAcrossSessionStates = true
+allowOutputMutation = false  # Safety for cached data integrity
+
+# Custom Streamlit Configuration Extensions
+# These are custom settings that enhance the FAO Dashboard experience
+
+[custom]
+# Custom settings documentation (these don't affect Streamlit but document our choices)
+dashboard_name = "FAO Food Price Index Dashboard"
+version = "1.0.0"
+data_source = "FAO (Food and Agriculture Organization of the United Nations)"
+update_frequency = "Monthly"
+cache_duration = "1 hour"
+
+# Performance optimizations applied:
+# 1. Arrow serialization for faster DataFrame operations
+# 2. Extended upload limits for Excel files
+# 3. Optimized caching with 1-hour TTL
+# 4. Professional theme with FAO brand colors
+# 5. Wide layout default for better chart visibility
+# 6. Extended timeouts for data fetching operations
+# 7. Security enhancements with XSRF protection
+
+# Theme rationale:
+# - Primary blue (#1f77b4) matches FAO brand and provides good contrast
+# - Light theme ensures readability of data visualizations
+# - Wide layout maximizes chart and table display area
+# - Expanded sidebar provides easy access to controls
+
+# File upload considerations:
+# - 500MB limit accommodates large FAO Excel files
+# - Arrow serialization improves performance with large datasets
+# - Extended timeouts handle network delays from FAO servers
+
+# Security considerations:
+# - XSRF protection enabled for production deployment
+# - Error details shown for debugging (can be disabled in production)
+# - Static serving enabled for favicon and custom assets

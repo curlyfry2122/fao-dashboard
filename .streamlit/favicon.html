@@ -1,0 +1,37 @@
+<!-- Custom Favicon for FAO Food Price Index Dashboard -->
+<!-- This file contains favicon configurations for the dashboard -->
+
+<!-- 
+For a production deployment, you would typically use:
+1. A custom ICO file created from the wheat/chart icon
+2. Multiple PNG sizes (16x16, 32x32, 48x48, 192x192)
+3. Apple touch icons for mobile devices
+
+For now, we use the emoji favicon which matches the app.py page_icon.
+The current app.py uses page_icon="📊" which displays as the favicon.
+
+To use a custom favicon:
+1. Create favicon.ico file (16x16, 32x32 sizes)
+2. Place in .streamlit/ directory
+3. Update config.toml with favicon path
+4. Or modify app.py st.set_page_config() to reference the file
+
+Suggested custom favicon designs for FAO Dashboard:
+- Wheat grain icon + bar chart
+- Globe with agricultural symbols
+- Trending chart with food symbols
+- FAO logo simplified for small sizes
+-->
+
+<!-- Emoji fallback (currently used in app.py) -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+
+<!-- 
+Example of how to use custom favicon files (uncomment when files are available):
+
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+-->

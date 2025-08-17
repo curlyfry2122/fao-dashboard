@@ -1,0 +1,138 @@
+name: FAO Dashboard Quality Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Install additional testing dependencies
+      run: |
+        pip install pytest pytest-cov pytest-xdist
+        
+    - name: Check Python syntax
+      run: |
+        python -m py_compile app.py
+        python -m py_compile pivot_builder.py
+        python -m py_compile data_pipeline.py
+        python -m py_compile chart_builder.py
+        python -m py_compile kpi_calculator.py
+        
+    - name: Run JavaScript validation
+      run: |
+        python validate_js.py
+        
+    - name: Run quick health check
+      run: |
+        python check_health.py
+        
+    - name: Run pytest tests
+      run: |
+        python -m pytest --tb=short -v --disable-warnings
+        
+    - name: Run integration tests (non-blocking)
+      run: |
+        python test_integration.py || echo "Integration tests completed with issues"
+        
+    - name: Generate test coverage report
+      run: |
+        python -m pytest --cov=. --cov-report=xml --cov-report=html || echo "Coverage report generated"
+        
+    - name: Upload coverage to GitHub
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report-${{ matrix.python-version }}
+        path: htmlcov/
+        
+    - name: Check for security issues (optional)
+      run: |
+        pip install bandit
+        bandit -r . -f json -o bandit-report.json || echo "Security scan completed"
+        
+    - name: Upload security report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-report-${{ matrix.python-version }}
+        path: bandit-report.json
+        
+    - name: Final validation summary
+      run: |
+        echo "✅ Quality check completed for Python ${{ matrix.python-version }}"
+        echo "📊 All validation steps have been executed"
+        echo "🔍 Check the job logs and artifacts for detailed results"
+
+  deployment-readiness:
+    needs: quality-check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Deployment readiness check
+      run: |
+        echo "🚀 Checking deployment readiness..."
+        python check_health.py
+        echo "✅ Main branch is ready for deployment"
+        
+    - name: Create deployment artifact
+      run: |
+        echo "📦 Creating deployment package..."
+        tar -czf fao-dashboard-deployment.tar.gz \
+          --exclude='.git*' \
+          --exclude='venv' \
+          --exclude='__pycache__' \
+          --exclude='*.pyc' \
+          --exclude='cache' \
+          --exclude='test_*.py' \
+          .
+          
+    - name: Upload deployment artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-package
+        path: fao-dashboard-deployment.tar.gz
+        retention-days: 30

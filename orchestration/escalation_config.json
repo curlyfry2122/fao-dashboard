@@ -1,0 +1,326 @@
+{
+  "email": {
+    "enabled": false,
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "use_tls": true,
+    "username": "",
+    "password": "",
+    "from_address": "fao-dashboard-alerts@example.com",
+    "to_addresses": [
+      "devops@example.com",
+      "admin@example.com"
+    ],
+    "subject_prefix": "[FAO Dashboard Alert]",
+    "template_path": "templates/alert_email.html"
+  },
+  "github": {
+    "enabled": true,
+    "token": "",
+    "repository": "fao-dash",
+    "owner": "your-username",
+    "labels": [
+      "automated",
+      "escalation",
+      "priority:high",
+      "agent-generated"
+    ],
+    "issue_template": "escalation_issue_template.md",
+    "auto_assign": true,
+    "close_on_resolution": true
+  },
+  "slack": {
+    "enabled": false,
+    "webhook_url": "",
+    "channel": "#fao-dashboard-alerts",
+    "username": "FAO Dashboard Bot",
+    "icon_emoji": ":warning:",
+    "mention_users": [
+      "@devops-team",
+      "@on-call"
+    ],
+    "thread_replies": true
+  },
+  "webhooks": {
+    "enabled": false,
+    "endpoints": [
+      {
+        "name": "monitoring_system",
+        "url": "https://monitoring.example.com/webhooks/alerts",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer YOUR_TOKEN"
+        },
+        "timeout": 30,
+        "retry_attempts": 3
+      }
+    ]
+  },
+  "escalation": {
+    "max_notifications_per_hour": 15,
+    "cooldown_minutes": 30,
+    "auto_resolve_after_hours": 24,
+    "emergency_contact_delay_minutes": 15,
+    "escalation_matrix": {
+      "L1_AUTOMATED": {
+        "description": "Automated recovery attempts",
+        "channels": ["log_only"],
+        "timeout_minutes": 5,
+        "max_attempts": 3
+      },
+      "L2_NOTIFICATION": {
+        "description": "Notifications sent to team",
+        "channels": ["github_issue", "log_only"],
+        "timeout_minutes": 30,
+        "max_attempts": 2
+      },
+      "L3_HUMAN_REVIEW": {
+        "description": "Human intervention required",
+        "channels": ["github_issue", "slack", "log_only"],
+        "timeout_minutes": 120,
+        "max_attempts": 1,
+        "requires_acknowledgment": true
+      },
+      "L4_EMERGENCY": {
+        "description": "Emergency response",
+        "channels": ["email", "slack", "webhook", "github_issue"],
+        "timeout_minutes": 15,
+        "max_attempts": 1,
+        "immediate_notification": true,
+        "requires_acknowledgment": true
+      }
+    },
+    "priority_escalation_rules": {
+      "critical": {
+        "immediate_level": "L3_HUMAN_REVIEW",
+        "escalate_after_minutes": 0,
+        "max_level": "L4_EMERGENCY"
+      },
+      "high": {
+        "immediate_level": "L2_NOTIFICATION",
+        "escalate_after_minutes": 30,
+        "max_level": "L3_HUMAN_REVIEW"
+      },
+      "medium": {
+        "immediate_level": "L1_AUTOMATED",
+        "escalate_after_minutes": 240,
+        "max_level": "L2_NOTIFICATION"
+      },
+      "low": {
+        "immediate_level": "L1_AUTOMATED",
+        "escalate_after_minutes": 1440,
+        "max_level": "L2_NOTIFICATION"
+      }
+    }
+  },
+  "automated_recovery": {
+    "enabled": true,
+    "max_retry_attempts": 3,
+    "agent_restart_enabled": true,
+    "cache_clear_enabled": true,
+    "fallback_mode_enabled": true,
+    "recovery_actions": {
+      "agent_health_critical": [
+        {
+          "action": "restart_agent",
+          "description": "Restart the unhealthy agent",
+          "timeout": 30,
+          "success_criteria": "health_score > 0.7"
+        },
+        {
+          "action": "clear_agent_cache",
+          "description": "Clear agent-specific cache",
+          "timeout": 10,
+          "success_criteria": "cache_cleared"
+        }
+      ],
+      "data_pipeline_failure": [
+        {
+          "action": "clear_data_cache",
+          "description": "Clear FAO data cache",
+          "timeout": 5,
+          "success_criteria": "cache_cleared"
+        },
+        {
+          "action": "retry_data_fetch",
+          "description": "Retry fetching FAO data",
+          "timeout": 60,
+          "success_criteria": "data_fetched"
+        },
+        {
+          "action": "use_backup_data",
+          "description": "Switch to backup data source",
+          "timeout": 10,
+          "success_criteria": "backup_loaded"
+        }
+      ],
+      "queue_size_critical": [
+        {
+          "action": "prioritize_critical_tasks",
+          "description": "Reorder queue to prioritize critical tasks",
+          "timeout": 5,
+          "success_criteria": "queue_reordered"
+        },
+        {
+          "action": "increase_agent_capacity",
+          "description": "Temporarily increase agent capacity",
+          "timeout": 10,
+          "success_criteria": "capacity_increased"
+        }
+      ],
+      "system_unresponsive": [
+        {
+          "action": "restart_orchestrator",
+          "description": "Restart the orchestrator system",
+          "timeout": 30,
+          "success_criteria": "orchestrator_running"
+        },
+        {
+          "action": "activate_fallback_mode",
+          "description": "Activate fallback operation mode",
+          "timeout": 5,
+          "success_criteria": "fallback_active"
+        }
+      ]
+    },
+    "recovery_timeouts": {
+      "agent_restart": 60,
+      "cache_clear": 30,
+      "data_fetch": 120,
+      "system_restart": 180
+    },
+    "fallback_procedures": {
+      "data_unavailable": {
+        "use_cached_data": true,
+        "cache_max_age_hours": 48,
+        "show_staleness_warning": true
+      },
+      "agent_unavailable": {
+        "queue_tasks": true,
+        "notify_admin": true,
+        "use_backup_agent": false
+      },
+      "system_overload": {
+        "reject_low_priority": true,
+        "increase_timeouts": true,
+        "enable_rate_limiting": true
+      }
+    }
+  },
+  "notification_templates": {
+    "critical_alert": {
+      "subject": "🚨 CRITICAL: FAO Dashboard Alert - {title}",
+      "body_template": "templates/critical_alert.txt",
+      "urgency": "high",
+      "retry_attempts": 3
+    },
+    "warning_alert": {
+      "subject": "⚠️ WARNING: FAO Dashboard Alert - {title}",
+      "body_template": "templates/warning_alert.txt",
+      "urgency": "medium",
+      "retry_attempts": 2
+    },
+    "info_alert": {
+      "subject": "ℹ️ INFO: FAO Dashboard Notification - {title}",
+      "body_template": "templates/info_alert.txt",
+      "urgency": "low",
+      "retry_attempts": 1
+    },
+    "resolution_notice": {
+      "subject": "✅ RESOLVED: FAO Dashboard Issue - {title}",
+      "body_template": "templates/resolution_notice.txt",
+      "urgency": "low",
+      "retry_attempts": 1
+    }
+  },
+  "rate_limiting": {
+    "enabled": true,
+    "max_notifications_per_hour": 20,
+    "max_notifications_per_day": 100,
+    "burst_allowance": 5,
+    "cooldown_periods": {
+      "same_rule": 30,
+      "same_agent": 15,
+      "same_severity": 10
+    },
+    "exceptions": {
+      "critical_always_notify": true,
+      "emergency_bypass_limits": true,
+      "manual_escalations_bypass": true
+    }
+  },
+  "monitoring": {
+    "track_notification_delivery": true,
+    "track_response_times": true,
+    "track_resolution_times": true,
+    "generate_reports": true,
+    "alert_on_delivery_failure": true,
+    "metrics_retention_days": 90,
+    "performance_thresholds": {
+      "notification_delivery_timeout": 30,
+      "response_time_warning": 300,
+      "resolution_time_sla": 3600
+    }
+  },
+  "compliance": {
+    "audit_logging": true,
+    "retain_escalation_history": true,
+    "encryption_at_rest": false,
+    "encryption_in_transit": true,
+    "data_retention_days": 365,
+    "anonymize_sensitive_data": true,
+    "compliance_reports": true
+  },
+  "testing": {
+    "test_mode_enabled": false,
+    "test_notification_targets": [
+      "test@example.com"
+    ],
+    "mock_external_services": false,
+    "simulate_failures": false,
+    "test_escalation_paths": true
+  },
+  "integration": {
+    "prometheus_metrics": {
+      "enabled": false,
+      "port": 8090,
+      "path": "/metrics"
+    },
+    "grafana_dashboards": {
+      "enabled": false,
+      "dashboard_url": "http://grafana.example.com/d/escalation"
+    },
+    "external_ticketing": {
+      "enabled": false,
+      "system": "jira",
+      "api_endpoint": "",
+      "api_token": "",
+      "project_key": "FAO"
+    }
+  },
+  "advanced_features": {
+    "intelligent_grouping": {
+      "enabled": true,
+      "group_similar_alerts": true,
+      "similarity_threshold": 0.8,
+      "max_group_size": 5
+    },
+    "predictive_escalation": {
+      "enabled": false,
+      "ml_model_path": "",
+      "prediction_threshold": 0.7
+    },
+    "dynamic_thresholds": {
+      "enabled": true,
+      "adjust_based_on_history": true,
+      "learning_period_days": 30
+    },
+    "contextual_routing": {
+      "enabled": true,
+      "consider_time_of_day": true,
+      "consider_current_load": true,
+      "consider_agent_expertise": true
+    }
+  }
+}

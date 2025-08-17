@@ -1,0 +1,174 @@
+{
+  "orchestrator": {
+    "max_queue_size": 100,
+    "task_timeout_seconds": 3600,
+    "health_check_interval": 60,
+    "metrics_update_interval": 300,
+    "max_concurrent_tasks": 20,
+    "escalation_enabled": true,
+    "auto_retry_enabled": true,
+    "log_level": "INFO",
+    "startup_delay_seconds": 5,
+    "shutdown_timeout_seconds": 30
+  },
+  "agents": {
+    "data-pipeline": {
+      "enabled": true,
+      "max_concurrent_tasks": 3,
+      "command": "python3 automation/weekly_monitor.py",
+      "timeout": 1800,
+      "health_check_endpoint": "/health",
+      "capabilities": ["data_fetching", "cache_management", "validation", "fao_integration"],
+      "priority_handling": ["critical", "high", "medium", "low"],
+      "retry_policy": {
+        "max_retries": 3,
+        "backoff_multiplier": 2,
+        "initial_delay": 30
+      }
+    },
+    "ui-dashboard": {
+      "enabled": true,
+      "max_concurrent_tasks": 2,
+      "command": "python3 -c 'import streamlit; print(\"UI agent ready\")'",
+      "timeout": 1200,
+      "capabilities": ["ui_testing", "frontend_validation", "user_experience", "streamlit"],
+      "priority_handling": ["high", "medium", "low"],
+      "health_check_command": "python3 check_health.py"
+    },
+    "deployment": {
+      "enabled": true,
+      "max_concurrent_tasks": 1,
+      "command": "python3 -c 'print(\"Deployment agent ready\")'",
+      "timeout": 900,
+      "capabilities": ["docker_build", "deployment", "infrastructure", "heroku"],
+      "priority_handling": ["critical", "high", "medium"],
+      "exclusive_priorities": ["critical"]
+    },
+    "performance-monitor": {
+      "enabled": true,
+      "max_concurrent_tasks": 2,
+      "command": "python3 -c 'import psutil; print(\"Performance monitor ready\")'",
+      "timeout": 2400,
+      "capabilities": ["performance_testing", "benchmarking", "optimization", "monitoring"],
+      "priority_handling": ["high", "medium", "low"],
+      "health_metrics": ["cpu_usage", "memory_usage", "response_time"]
+    },
+    "security-scan": {
+      "enabled": true,
+      "max_concurrent_tasks": 1,
+      "command": "python3 -c 'import subprocess; print(\"Security scanner ready\")'",
+      "timeout": 600,
+      "capabilities": ["vulnerability_scanning", "security_analysis", "compliance", "dependency_audit"],
+      "priority_handling": ["critical", "high", "medium"],
+      "scan_schedule": "0 2 * * *",
+      "automated_actions": ["safety_check", "bandit_scan"]
+    },
+    "dependency-update": {
+      "enabled": true,
+      "max_concurrent_tasks": 3,
+      "command": "python3 -c 'import pip; print(\"Dependency manager ready\")'",
+      "timeout": 300,
+      "capabilities": ["dependency_checking", "version_management", "compatibility", "automated_updates"],
+      "priority_handling": ["medium", "low"],
+      "update_schedule": "0 8 * * 1",
+      "auto_approve_minor": true
+    },
+    "pytest-test-generator": {
+      "enabled": true,
+      "max_concurrent_tasks": 2,
+      "command": "python3 generate_tests.py",
+      "timeout": 600,
+      "capabilities": ["test_generation", "code_analysis", "pytest", "coverage"],
+      "priority_handling": ["high", "medium", "low"],
+      "test_frameworks": ["pytest", "unittest"],
+      "coverage_threshold": 80
+    }
+  },
+  "escalation": {
+    "critical_immediate": true,
+    "high_after_minutes": 30,
+    "medium_after_hours": 4,
+    "low_after_hours": 24,
+    "max_escalation_attempts": 3,
+    "escalation_contacts": [
+      {
+        "level": "L1",
+        "type": "automated",
+        "actions": ["restart_agent", "clear_cache", "retry_task"]
+      },
+      {
+        "level": "L2",
+        "type": "notification",
+        "channels": ["github_issue", "log_alert"]
+      },
+      {
+        "level": "L3",
+        "type": "human_review",
+        "channels": ["github_issue", "log_alert"],
+        "priority": "high"
+      }
+    ],
+    "cooldown_periods": {
+      "critical": 15,
+      "high": 30,
+      "medium": 60,
+      "low": 120
+    }
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": ["github_issues", "logs", "file_reports"],
+    "critical_immediate": true,
+    "summary_interval_hours": 6,
+    "report_formats": ["json", "html", "csv"],
+    "retention_days": 30
+  },
+  "performance": {
+    "metrics_collection_enabled": true,
+    "detailed_logging": true,
+    "performance_baselines": {
+      "task_completion_time": 300,
+      "queue_processing_rate": 10,
+      "agent_response_time": 30,
+      "success_rate_threshold": 0.95
+    },
+    "auto_scaling": {
+      "enabled": false,
+      "scale_up_threshold": 0.8,
+      "scale_down_threshold": 0.3,
+      "cooldown_minutes": 15
+    }
+  },
+  "security": {
+    "input_validation": true,
+    "command_sanitization": true,
+    "file_access_restrictions": true,
+    "allowed_directories": [
+      "/Users/jackdevine/Development/fn-projects/fao-dash",
+      "/tmp"
+    ],
+    "blocked_commands": ["rm -rf", "sudo", "chmod 777"],
+    "audit_logging": true
+  },
+  "integration": {
+    "github_actions": {
+      "enabled": true,
+      "workflow_dispatch_enabled": true,
+      "status_reporting": true,
+      "artifact_upload": true
+    },
+    "fao_data_source": {
+      "enabled": true,
+      "url": "https://www.fao.org/fileadmin/templates/worldfood/Reports_and_docs/Food_price_indices_data.xls",
+      "validation_enabled": true,
+      "cache_enabled": true,
+      "retry_attempts": 3
+    },
+    "monitoring_tools": {
+      "enabled": true,
+      "health_checks": true,
+      "performance_monitoring": true,
+      "alert_generation": true
+    }
+  }
+}

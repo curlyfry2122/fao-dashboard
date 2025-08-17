@@ -1,0 +1,75 @@
+# Google App Engine Configuration for FAO Food Price Index Dashboard
+# This file configures deployment on Google Cloud Platform App Engine
+
+runtime: python312
+
+# Basic service configuration
+service: default
+instance_class: F2  # Standard instance with 512MB RAM and 1.2GHz CPU
+
+# Environment variables
+env_variables:
+  STREAMLIT_SERVER_PORT: 8080
+  STREAMLIT_SERVER_ADDRESS: 0.0.0.0
+  STREAMLIT_BROWSER_GATHER_USAGE_STATS: false
+  STREAMLIT_GLOBAL_DEVELOPMENT_MODE: false
+  PYTHONUNBUFFERED: 1
+  TZ: UTC
+
+# Automatic scaling configuration
+automatic_scaling:
+  min_instances: 1
+  max_instances: 5
+  target_cpu_utilization: 0.7
+  target_throughput_utilization: 0.7
+
+# Network configuration
+vpc_access_connector:
+  # Uncomment and configure if using VPC
+  # name: "projects/PROJECT_ID/locations/REGION/connectors/CONNECTOR_NAME"
+
+# Handler configuration for Streamlit
+handlers:
+- url: /.*
+  script: auto
+  secure: always
+  redirect_http_response_code: 301
+
+# Health check configuration
+liveness_check:
+  path: "/health"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 1
+
+readiness_check:
+  path: "/health"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 1
+  app_start_timeout_sec: 300
+
+# Resource limits
+resources:
+  cpu: 1
+  memory_gb: 1
+  disk_size_gb: 10
+
+# Skip files to reduce deployment size
+skip_files:
+- ^(.*/)?#.*#$
+- ^(.*/)?.*~$
+- ^(.*/)?.*\.py[co]$
+- ^(.*/)?.*/RCS/.*$
+- ^(.*/)?\..*$
+- ^(.*/)?tests/.*$
+- ^(.*/)?test_.*\.py$
+- node_modules/
+- venv/
+- __pycache__/
+- \.git/
+- \.pytest_cache/
+- cache/
+- logs/

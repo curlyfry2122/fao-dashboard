@@ -37,22 +37,57 @@ def parse_fao_excel_data(excel_data: BytesIO, sheet_name: str) -> pd.DataFrame:
     # Reset BytesIO position to beginning
     excel_data.seek(0)
     
-    # Check if sheet exists (use openpyxl engine for xlsx files)
-    excel_file = pd.ExcelFile(excel_data, engine='openpyxl')
-    if sheet_name not in excel_file.sheet_names:
-        raise ValueError(f"Sheet '{sheet_name}' not found in Excel file. Available sheets: {excel_file.sheet_names}")
+    # Auto-detect Excel engine based on file format
+    excel_file = None
+    engines_to_try = ['xlrd', 'openpyxl']  # Try xlrd first for .xls, then openpyxl for .xlsx
+    
+    last_exception = None
+    for engine in engines_to_try:
+        try:
+            excel_data.seek(0)  # Reset position for each attempt
+            excel_file = pd.ExcelFile(excel_data, engine=engine)
+            break  # Success, break out of loop
+        except Exception as e:
+            last_exception = e
+            continue  # Try next engine
+    
+    if excel_file is None:
+        raise ValueError(f"Unable to read Excel file with any supported engine. Last error: {str(last_exception)}")
+    
+    # Handle sheet name mapping for new FAO format
+    sheet_name_mapping = {
+        'Monthly': 'Indices_Monthly',  # New format uses Indices_Monthly
+        'Annual': 'Annual'  # Annual stays the same
+    }
+    
+    # Determine actual sheet name to use
+    actual_sheet_name = sheet_name
+    available_sheets = excel_file.sheet_names
+    
+    if sheet_name not in available_sheets:
+        # Try mapped name for new format
+        if sheet_name in sheet_name_mapping and sheet_name_mapping[sheet_name] in available_sheets:
+            actual_sheet_name = sheet_name_mapping[sheet_name]
+            print(f"📋 Using new format sheet: {actual_sheet_name} (requested: {sheet_name})")
+        else:
+            raise ValueError(f"Sheet '{sheet_name}' not found in Excel file. Available sheets: {available_sheets}")
+    
+    print(f"📊 Processing sheet: {actual_sheet_name}")
+    
+    # Determine the engine that worked
+    engine_to_use = excel_file.engine.name if hasattr(excel_file.engine, 'name') else engines_to_try[0]
     
     # Read the sheet with multiple header row attempts
     df = None
-    header_row = _detect_header_row(excel_data, sheet_name)
+    header_row = _detect_header_row(excel_data, actual_sheet_name, engine_to_use)
     
     if header_row is not None:
         excel_data.seek(0)  # Reset position
-        df = pd.read_excel(excel_data, sheet_name=sheet_name, header=header_row, engine='openpyxl')
+        df = pd.read_excel(excel_data, sheet_name=actual_sheet_name, header=header_row, engine=engine_to_use)
     else:
         # Fallback: try reading without header and create our own
         excel_data.seek(0)
-        df = pd.read_excel(excel_data, sheet_name=sheet_name, header=None, engine='openpyxl')
+        df = pd.read_excel(excel_data, sheet_name=actual_sheet_name, header=None, engine=engine_to_use)
         if len(df) == 0:
             df = pd.DataFrame()  # Empty DataFrame
     
@@ -90,7 +125,7 @@ def parse_fao_excel_data(excel_data: BytesIO, sheet_name: str) -> pd.DataFrame:
     return standardized_df
 
 
-def _detect_header_row(excel_data: BytesIO, sheet_name: str) -> Optional[int]:
+def _detect_header_row(excel_data: BytesIO, sheet_name: str, engine: str = 'xlrd') -> Optional[int]:
     """
     Intelligently detect which row contains the headers.
     
@@ -99,6 +134,7 @@ def _detect_header_row(excel_data: BytesIO, sheet_name: str) -> Optional[int]:
     Args:
         excel_data: BytesIO object containing Excel file content.
         sheet_name: Name of the sheet to analyze.
+        engine: Pandas Excel engine to use for reading.
         
     Returns:
         int or None: Row index containing headers, or None if not found.
@@ -112,7 +148,7 @@ def _detect_header_row(excel_data: BytesIO, sheet_name: str) -> Optional[int]:
         try:
             excel_data.seek(0)
             # Read a few rows to get headers and check if they make sense
-            df = pd.read_excel(excel_data, sheet_name=sheet_name, header=row_idx, nrows=3, engine='openpyxl')
+            df = pd.read_excel(excel_data, sheet_name=sheet_name, header=row_idx, nrows=3, engine=engine)
             
             if df.empty or len(df.columns) == 0:
                 continue

@@ -1,0 +1,29 @@
+# Act configuration for local GitHub Actions testing
+# This file configures the act tool to simulate GitHub Actions environment locally
+
+# Use ubuntu-latest image (medium size with common tools)
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+# Set platform architecture 
+--platform ubuntu-latest
+
+# Enable verbose logging for debugging
+--verbose
+
+# Set default secrets (override with actual values for testing)
+--secret GITHUB_TOKEN=fake_token_for_testing
+
+# Use local .env file if present for additional secrets
+--env-file .env
+
+# Set job timeout (30 minutes to match workflow)
+--job-timeout 30m
+
+# Enable artifact server for testing artifact uploads
+--artifact-server-path /tmp/act-artifacts
+
+# Network mode for internet access (needed for FAO data fetching)
+--network host
+
+# Mount current directory as workspace
+--workdir /github/workspace

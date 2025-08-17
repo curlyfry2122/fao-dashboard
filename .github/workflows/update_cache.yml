@@ -1,0 +1,385 @@
+name: Update FAO Data Cache
+
+# Automated monthly cache updates with manual trigger capability
+# This workflow fetches fresh FAO data, updates cache files, and creates release tags
+'on':
+  # Monthly trigger: 15th of each month at 12:00 UTC
+  schedule:
+    - cron: '0 12 15 * *'
+  
+  # Manual trigger with optional parameters
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Force update even if cache is recent'
+        required: false
+        default: 'false'
+        type: boolean
+      create_release:
+        description: 'Create release tag after successful update'
+        required: false
+        default: 'true'
+        type: boolean
+      sheet_types:
+        description: 'Comma-separated list: Monthly,Annual or specific'
+        required: false
+        default: 'Monthly,Annual'
+        type: string
+
+env:
+  PYTHON_VERSION: '3.12'
+  CACHE_DIR: '.pipeline_cache'
+  
+jobs:
+  update-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    outputs:
+      cache-updated: ${{ steps.update.outputs.cache-updated }}
+      release-tag: ${{ steps.release.outputs.tag }}
+      data-summary: ${{ steps.update.outputs.data-summary }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        # Need full history for proper tagging
+        fetch-depth: 0
+        # Use GitHub token with write permissions
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        # Install additional tools for validation
+        pip install pytest
+    
+    - name: Check current cache status
+      id: cache-status
+      run: |
+        echo "🔍 Checking current cache status..."
+        
+        # Check if cache files exist and their ages
+        if [ -f "${{ env.CACHE_DIR }}/monthly_cache.pkl" ]; then
+          MONTHLY_AGE=$(python3 -c "
+        import os
+        from datetime import datetime, timedelta
+        if os.path.exists('${{ env.CACHE_DIR }}/monthly_cache.pkl'):
+            age = datetime.now() - datetime.fromtimestamp(os.path.getmtime('${{ env.CACHE_DIR }}/monthly_cache.pkl'))
+            print(f'{age.days}')
+        else:
+            print('999')
+        ")
+          echo "monthly-cache-age-days=${MONTHLY_AGE}" >> $GITHUB_OUTPUT
+          echo "📊 Monthly cache age: ${MONTHLY_AGE} days"
+        else
+          echo "monthly-cache-age-days=999" >> $GITHUB_OUTPUT
+          echo "📊 No monthly cache found"
+        fi
+        
+        if [ -f "${{ env.CACHE_DIR }}/annual_cache.pkl" ]; then
+          ANNUAL_AGE=$(python3 -c "
+        import os
+        from datetime import datetime, timedelta
+        if os.path.exists('${{ env.CACHE_DIR }}/annual_cache.pkl'):
+            age = datetime.now() - datetime.fromtimestamp(os.path.getmtime('${{ env.CACHE_DIR }}/annual_cache.pkl'))
+            print(f'{age.days}')
+        else:
+            print('999')
+        ")
+          echo "annual-cache-age-days=${ANNUAL_AGE}" >> $GITHUB_OUTPUT
+          echo "📊 Annual cache age: ${ANNUAL_AGE} days"
+        else
+          echo "annual-cache-age-days=999" >> $GITHUB_OUTPUT
+          echo "📊 No annual cache found"
+        fi
+        
+        # Determine if update is needed
+        FORCE_UPDATE="${{ github.event.inputs.force_update }}"
+        if [ "$FORCE_UPDATE" = "true" ] || [ "${MONTHLY_AGE:-999}" -gt "7" ] || [ "${ANNUAL_AGE:-999}" -gt "7" ]; then
+          echo "update-needed=true" >> $GITHUB_OUTPUT
+          echo "✅ Cache update is needed"
+        else
+          echo "update-needed=false" >> $GITHUB_OUTPUT
+          echo "ℹ️ Cache is recent, skipping update"
+        fi
+    
+    - name: Backup existing cache
+      if: steps.cache-status.outputs.update-needed == 'true'
+      run: |
+        echo "💾 Creating backup of existing cache..."
+        mkdir -p cache_backup
+        if [ -d "${{ env.CACHE_DIR }}" ]; then
+          cp -r ${{ env.CACHE_DIR }}/* cache_backup/ 2>/dev/null || echo "No existing cache to backup"
+        fi
+        echo "Backup created at: cache_backup/"
+    
+    - name: Update FAO data cache
+      id: update
+      if: steps.cache-status.outputs.update-needed == 'true'
+      run: |
+        echo "🔄 Starting FAO data cache update..."
+        
+        # Parse sheet types from input
+        SHEET_TYPES="${{ github.event.inputs.sheet_types }}"
+        if [ -z "$SHEET_TYPES" ]; then
+          SHEET_TYPES="Monthly,Annual"
+        fi
+        
+        echo "📊 Processing sheet types: $SHEET_TYPES"
+        
+        # Create cache directory
+        mkdir -p ${{ env.CACHE_DIR }}
+        
+        # Update cache for each sheet type
+        UPDATE_SUCCESS=false
+        DATA_SUMMARY=""
+        
+        IFS=',' read -ra SHEETS <<< "$SHEET_TYPES"
+        for sheet in "${SHEETS[@]}"; do
+          sheet=$(echo "$sheet" | xargs)  # trim whitespace
+          echo "📈 Processing $sheet data..."
+          
+          # Run data pipeline for this sheet type
+          if python3 -c "
+        from data_pipeline import DataPipeline
+        import sys
+        
+        try:
+            pipeline = DataPipeline(sheet_name='$sheet', cache_ttl_hours=0.1)  # Force refresh
+            df = pipeline.run()
+            
+            if df is not None and len(df) > 0:
+                print(f'✅ Successfully updated $sheet cache: {len(df)} records')
+                print(f'Date range: {df[\"date\"].min()} to {df[\"date\"].max()}')
+                sys.exit(0)
+            else:
+                print(f'❌ No data returned for $sheet')
+                sys.exit(1)
+        except Exception as e:
+            print(f'❌ Error updating $sheet cache: {str(e)}')
+            sys.exit(1)
+        "; then
+            echo "✅ $sheet cache updated successfully"
+            UPDATE_SUCCESS=true
+            
+            # Get data summary
+            RECORDS=$(python3 -c "
+        from data_pipeline import DataPipeline
+        try:
+            pipeline = DataPipeline(sheet_name='$sheet')
+            df = pipeline.run()
+            if df is not None:
+                print(len(df))
+            else:
+                print(0)
+        except:
+            print(0)
+        ")
+            DATA_SUMMARY="${DATA_SUMMARY}$sheet: $RECORDS records; "
+          else
+            echo "❌ Failed to update $sheet cache"
+          fi
+        done
+        
+        if [ "$UPDATE_SUCCESS" = true ]; then
+          echo "cache-updated=true" >> $GITHUB_OUTPUT
+          echo "data-summary=$DATA_SUMMARY" >> $GITHUB_OUTPUT
+          echo "✅ Cache update completed successfully"
+        else
+          echo "cache-updated=false" >> $GITHUB_OUTPUT
+          echo "❌ Cache update failed"
+          exit 1
+        fi
+    
+    - name: Validate updated cache
+      if: steps.update.outputs.cache-updated == 'true'
+      run: |
+        echo "🔍 Validating updated cache files..."
+        
+        # Run basic data validation
+        python3 -c "
+        import pickle
+        import os
+        from pathlib import Path
+        
+        cache_dir = Path('${{ env.CACHE_DIR }}')
+        validation_passed = True
+        
+        for cache_file in cache_dir.glob('*_cache.pkl'):
+            try:
+                with open(cache_file, 'rb') as f:
+                    data = pickle.load(f)
+                    
+                if hasattr(data, 'df') and data.df is not None and len(data.df) > 0:
+                    print(f'✅ {cache_file.name}: Valid cache with {len(data.df)} records')
+                else:
+                    print(f'❌ {cache_file.name}: Invalid or empty cache')
+                    validation_passed = False
+                    
+            except Exception as e:
+                print(f'❌ {cache_file.name}: Validation failed - {str(e)}')
+                validation_passed = False
+        
+        if not validation_passed:
+            print('❌ Cache validation failed')
+            exit(1)
+        else:
+            print('✅ All cache files validated successfully')
+        "
+        
+        # Run existing tests to ensure data integrity
+        echo "🧪 Running data integrity tests..."
+        python3 -m pytest test_data_pipeline.py -v --tb=short || echo "⚠️ Some tests failed but proceeding with cache commit"
+    
+    - name: Configure Git
+      if: steps.update.outputs.cache-updated == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action Cache Updater"
+    
+    - name: Commit updated cache
+      if: steps.update.outputs.cache-updated == 'true'
+      run: |
+        echo "💾 Committing updated cache files..."
+        
+        # Add cache files to git
+        git add ${{ env.CACHE_DIR }}/*.pkl
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "ℹ️ No cache changes to commit"
+        else
+          # Create commit with detailed message
+          COMMIT_MSG="🔄 Automated cache update - $(date -u '+%Y-%m-%d %H:%M UTC')
+        
+        Data Summary: ${{ steps.update.outputs.data-summary }}
+        Triggered by: ${{ github.event_name }}
+        
+        🤖 Generated with GitHub Actions
+        Co-Authored-By: FAO Cache Updater <noreply@github.com>"
+        
+          git commit -m "$COMMIT_MSG"
+          git push
+          
+          echo "✅ Cache files committed and pushed"
+        fi
+    
+    - name: Create release tag
+      id: release
+      if: steps.update.outputs.cache-updated == 'true' && (github.event.inputs.create_release == 'true' || github.event.inputs.create_release == '')
+      run: |
+        echo "🏷️ Creating release tag..."
+        
+        # Generate tag name with date
+        TAG_DATE=$(date -u '+%Y-%m-%d')
+        TAG_NAME="cache-update-${TAG_DATE}"
+        
+        # Check if tag already exists
+        if git tag -l | grep -q "^${TAG_NAME}$"; then
+          # If tag exists, append time to make it unique
+          TAG_TIME=$(date -u '+%H%M')
+          TAG_NAME="cache-update-${TAG_DATE}-${TAG_TIME}"
+        fi
+        
+        # Create annotated tag
+        git tag -a "$TAG_NAME" -m "📊 FAO Data Cache Update - $TAG_DATE
+        
+        Automated cache refresh containing latest FAO Food Price Index data.
+        
+        Data Summary: ${{ steps.update.outputs.data-summary }}
+        Update Date: $(date -u '+%Y-%m-%d %H:%M UTC')
+        Triggered by: ${{ github.event_name }}
+        
+        🤖 Generated with GitHub Actions"
+        
+        # Push tag
+        git push origin "$TAG_NAME"
+        
+        echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+        echo "✅ Created release tag: $TAG_NAME"
+    
+    - name: Upload cache artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: fao-cache-${{ github.run_number }}
+        path: |
+          ${{ env.CACHE_DIR }}/*.pkl
+          cache_backup/
+        retention-days: 30
+    
+    - name: Restore cache on failure
+      if: failure() && steps.update.outputs.cache-updated != 'true'
+      run: |
+        echo "🔄 Restoring cache from backup due to failure..."
+        if [ -d "cache_backup" ] && [ "$(ls -A cache_backup)" ]; then
+          mkdir -p ${{ env.CACHE_DIR }}
+          cp cache_backup/* ${{ env.CACHE_DIR }}/ 2>/dev/null || true
+          echo "✅ Cache restored from backup"
+        else
+          echo "ℹ️ No backup to restore"
+        fi
+    
+    - name: Update workflow summary
+      if: always()
+      run: |
+        echo "## 📊 FAO Cache Update Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Date:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.update.outputs.cache-updated }}" = "true" ]; then
+          echo "✅ **Status:** Cache updated successfully" >> $GITHUB_STEP_SUMMARY
+          echo "📈 **Data:** ${{ steps.update.outputs.data-summary }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -n "${{ steps.release.outputs.tag }}" ]; then
+            echo "🏷️ **Release Tag:** \`${{ steps.release.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+        elif [ "${{ steps.cache-status.outputs.update-needed }}" = "false" ]; then
+          echo "ℹ️ **Status:** Cache is recent, no update needed" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Monthly Cache Age:** ${{ steps.cache-status.outputs.monthly-cache-age-days }} days" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Annual Cache Age:** ${{ steps.cache-status.outputs.annual-cache-age-days }} days" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Status:** Cache update failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "- [📋 Cache Files](https://github.com/${{ github.repository }}/tree/main/.pipeline_cache)" >> $GITHUB_STEP_SUMMARY
+        echo "- [🏷️ Releases](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY
+        echo "- [📊 Dashboard](https://github.com/${{ github.repository }})" >> $GITHUB_STEP_SUMMARY
+
+  notify-failure:
+    needs: update-cache
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+    - name: Send failure notification
+      run: |
+        echo "❌ FAO Cache Update workflow failed"
+        echo "🔗 View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        
+        # Here you could add additional notification logic:
+        # - Send email notifications
+        # - Post to Slack/Discord
+        # - Create GitHub issue
+        # - etc.

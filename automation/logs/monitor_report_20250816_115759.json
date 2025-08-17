@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-08-16T11:57:59.076897",
+  "check_type": "comprehensive",
+  "cache_health": {
+    "Monthly": {
+      "exists": true,
+      "is_valid": true,
+      "age_hours": 0.15415388638888888,
+      "ttl_remaining_hours": 0.8458461136111112,
+      "status": "OK"
+    },
+    "Annual": {
+      "exists": true,
+      "is_valid": true,
+      "age_hours": 0.0010853577777777778,
+      "ttl_remaining_hours": 0.9989146422222223,
+      "status": "OK"
+    }
+  },
+  "data_freshness": {
+    "Monthly": {
+      "latest_date": "2025-07-01",
+      "age_days": 46,
+      "row_count": 428,
+      "status": "OK",
+      "missing_values_percent": 1.58
+    },
+    "Annual": {
+      "latest_date": "2025-01-01",
+      "age_days": 227,
+      "row_count": 36,
+      "status": "WARNING",
+      "issue": "Data is 227 days old (max: 60)",
+      "missing_values_percent": 8.67
+    }
+  },
+  "overall_status": "WARNING",
+  "summary": {
+    "total_checks": 4,
+    "errors": 0,
+    "warnings": 1,
+    "ok_count": -1
+  }
+}

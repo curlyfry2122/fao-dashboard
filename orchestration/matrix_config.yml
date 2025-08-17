@@ -1,0 +1,418 @@
+---
+# FAO Dashboard Priority Matrix Configuration
+# This file defines how issues are classified and routed to appropriate agents
+
+keywords:
+  critical:
+    - down
+    - outage
+    - crash
+    - critical
+    - urgent
+    - emergency
+    - data loss
+    - security breach
+    - vulnerability
+    - production failure
+    - memory leak
+    - infinite loop
+    - deadlock
+    - corruption
+    - system failure
+    - cannot access
+    - broken pipeline
+    - fao data unavailable
+
+  high:
+    - error
+    - bug
+    - failure
+    - broken
+    - not working
+    - exception
+    - timeout
+    - slow performance
+    - high cpu
+    - high memory
+    - incorrect data
+    - missing data
+    - authentication failed
+    - dashboard broken
+    - charts not loading
+    - data inconsistent
+    - pipeline failed
+
+  medium:
+    - enhancement
+    - feature request
+    - improvement
+    - optimization
+    - refactor
+    - update
+    - upgrade
+    - documentation
+    - usability
+    - ui improvement
+    - performance tuning
+    - cache optimization
+    - code quality
+    - testing
+    - monitoring
+
+  low:
+    - question
+    - discussion
+    - clarification
+    - minor
+    - cosmetic
+    - typo
+    - spelling
+    - style
+    - formatting
+    - comment
+    - suggestion
+    - nice to have
+
+agent_keywords:
+  data-pipeline:
+    - data
+    - fao
+    - fetch
+    - download
+    - pipeline
+    - cache
+    - excel
+    - csv
+    - parsing
+    - etl
+    - transform
+    - load
+    - import
+    - data quality
+    - missing values
+    - data validation
+    - food price index
+    - monthly data
+    - annual data
+    - data source
+    - excel file
+    - data structure
+
+  ui-dashboard:
+    - ui
+    - streamlit
+    - dashboard
+    - chart
+    - visualization
+    - plot
+    - graph
+    - display
+    - interface
+    - frontend
+    - user experience
+    - layout
+    - styling
+    - responsive
+    - mobile
+    - sidebar
+    - selectbox
+    - multiselect
+    - plotly
+    - altair
+    - matplotlib
+
+  deployment:
+    - deploy
+    - deployment
+    - docker
+    - container
+    - heroku
+    - cloud
+    - ci/cd
+    - build
+    - release
+    - production
+    - staging
+    - environment
+    - configuration
+    - setup
+    - dockerfile
+    - requirements
+    - runtime
+    - buildpack
+
+  performance-monitor:
+    - performance
+    - slow
+    - fast
+    - memory
+    - cpu
+    - optimization
+    - bottleneck
+    - latency
+    - throughput
+    - scalability
+    - caching
+    - efficiency
+    - resource usage
+    - load time
+    - response time
+    - profiling
+    - benchmark
+
+  security-scan:
+    - security
+    - vulnerability
+    - cve
+    - auth
+    - authentication
+    - authorization
+    - permission
+    - access
+    - encrypt
+    - decrypt
+    - ssl
+    - tls
+    - token
+    - credential
+    - privacy
+    - safety
+    - bandit
+    - secrets
+    - compliance
+
+  dependency-update:
+    - dependency
+    - package
+    - library
+    - version
+    - update
+    - upgrade
+    - requirements
+    - pip
+    - npm
+    - outdated
+    - compatibility
+    - breaking change
+    - requirements.txt
+    - package.json
+    - vulnerability fix
+
+  pytest-test-generator:
+    - test
+    - pytest
+    - testing
+    - unit test
+    - integration test
+    - coverage
+    - test case
+    - assertion
+    - mock
+    - fixture
+    - test generation
+    - automated testing
+    - test suite
+    - quality assurance
+
+weight_factors:
+  title_multiplier: 2.5
+  label_multiplier: 2.0
+  body_multiplier: 1.0
+  author_reputation_multiplier: 0.3
+  time_sensitivity_multiplier: 1.5
+  keyword_density_multiplier: 1.2
+  context_relevance_multiplier: 1.4
+
+escalation_rules:
+  critical_immediate: true
+  high_after_hours: 2
+  medium_after_hours: 24
+  low_after_hours: 168
+  max_agent_load: 5
+  cross_team_threshold: 3
+  auto_escalate_on_failure: true
+  escalation_cooldown_minutes: 30
+  max_escalations_per_day: 10
+
+agent_capabilities:
+  data-pipeline:
+    agent_type: data-pipeline
+    max_concurrent_issues: 3
+    expertise_areas:
+      - data processing
+      - ETL operations
+      - cache management
+      - FAO integration
+      - data validation
+      - Excel/CSV parsing
+      - data quality assurance
+    average_resolution_time:
+      days: 0
+      hours: 4
+      minutes: 0
+    available_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    escalation_threshold: 2
+
+  ui-dashboard:
+    agent_type: ui-dashboard
+    max_concurrent_issues: 4
+    expertise_areas:
+      - Streamlit development
+      - UI/UX design
+      - data visualization
+      - frontend development
+      - user interface testing
+      - responsive design
+      - dashboard optimization
+    average_resolution_time:
+      days: 0
+      hours: 6
+      minutes: 0
+    available_hours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    escalation_threshold: 3
+
+  deployment:
+    agent_type: deployment
+    max_concurrent_issues: 2
+    expertise_areas:
+      - Docker containerization
+      - CI/CD pipelines
+      - cloud deployment
+      - DevOps practices
+      - infrastructure management
+      - Heroku deployment
+      - environment configuration
+    average_resolution_time:
+      days: 0
+      hours: 3
+      minutes: 0
+    available_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    escalation_threshold: 1
+
+  performance-monitor:
+    agent_type: performance-monitor
+    max_concurrent_issues: 3
+    expertise_areas:
+      - performance optimization
+      - system monitoring
+      - profiling and analysis
+      - resource management
+      - bottleneck identification
+      - benchmarking
+      - scalability testing
+    average_resolution_time:
+      days: 0
+      hours: 8
+      minutes: 0
+    available_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    escalation_threshold: 2
+
+  security-scan:
+    agent_type: security-scan
+    max_concurrent_issues: 2
+    expertise_areas:
+      - security analysis
+      - vulnerability assessment
+      - dependency auditing
+      - compliance checking
+      - threat detection
+      - security best practices
+    average_resolution_time:
+      days: 0
+      hours: 2
+      minutes: 0
+    available_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    escalation_threshold: 1
+
+  dependency-update:
+    agent_type: dependency-update
+    max_concurrent_issues: 5
+    expertise_areas:
+      - dependency management
+      - version control
+      - compatibility testing
+      - automated updates
+      - package management
+      - security patching
+    average_resolution_time:
+      days: 0
+      hours: 1
+      minutes: 0
+    available_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    escalation_threshold: 4
+
+  pytest-test-generator:
+    agent_type: pytest-test-generator
+    max_concurrent_issues: 3
+    expertise_areas:
+      - test generation
+      - pytest framework
+      - code analysis
+      - test coverage
+      - quality assurance
+      - automated testing
+      - test strategy
+    average_resolution_time:
+      days: 0
+      hours: 2
+      minutes: 30
+    available_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    escalation_threshold: 2
+
+# Advanced classification rules
+classification_rules:
+  # Emergency patterns that override normal classification
+  emergency_patterns:
+    - "production.*down"
+    - "data.*lost"
+    - "security.*breach"
+    - "fao.*data.*unavailable"
+    - "dashboard.*completely.*broken"
+
+  # Context-aware classifications
+  context_rules:
+    - pattern: "fao.*data"
+      agent_bias: data-pipeline
+      priority_boost: 1
+    - pattern: "streamlit.*error"
+      agent_bias: ui-dashboard
+      priority_boost: 1
+    - pattern: "heroku.*deploy"
+      agent_bias: deployment
+      priority_boost: 1
+    - pattern: "slow.*performance"
+      agent_bias: performance-monitor
+      priority_boost: 0.5
+
+  # Time-based adjustments
+  time_sensitivity:
+    business_hours: [9, 10, 11, 12, 13, 14, 15, 16, 17]
+    weekend_priority_reduction: 0.8
+    night_priority_reduction: 0.7
+    holiday_priority_reduction: 0.6
+
+  # User context (can be extended)
+  user_priority_adjustments:
+    admin_users: 1.2
+    regular_users: 1.0
+    guest_users: 0.8
+
+# Quality assurance settings
+quality_assurance:
+  confidence_threshold: 0.7
+  manual_review_threshold: 0.5
+  auto_assignment_threshold: 0.8
+  feedback_learning_enabled: true
+  classification_audit_enabled: true
+  performance_tracking_enabled: true
+
+# Machine learning enhancements (for future implementation)
+ml_enhancements:
+  enabled: false
+  model_path: "models/classification_model.pkl"
+  feature_extraction:
+    - tfidf_features
+    - semantic_features
+    - historical_patterns
+  retraining_schedule: "0 2 * * 0"  # Weekly retraining
+  confidence_threshold: 0.85
