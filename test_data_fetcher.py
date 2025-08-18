@@ -22,6 +22,7 @@ class TestDownloadFaoFpiData:
         mock_response = Mock()
         mock_response.content = b'fake excel data'
         mock_response.raise_for_status.return_value = None
+        mock_response.headers = {'content-type': 'application/vnd.ms-excel'}
         mock_get.return_value = mock_response
         
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -29,10 +30,12 @@ class TestDownloadFaoFpiData:
             
             assert isinstance(result, BytesIO)
             assert result.getvalue() == b'fake excel data'
-            mock_get.assert_called_once_with(
-                'https://www.fao.org/fileadmin/templates/worldfood/Reports_and_docs/Food_price_indices_data.xls',
-                timeout=30
-            )
+            # Verify mock was called with the correct URL and headers
+            mock_get.assert_called_once()
+            call_args = mock_get.call_args
+            assert 'food_price_indices_data_aug.xls' in call_args[0][0]  # Check URL contains expected filename
+            assert call_args[1]['timeout'] == 30  # Check timeout parameter
+            assert 'headers' in call_args[1]  # Check headers were included
 
     @patch('data_fetcher.requests.get')
     def test_successful_download_creates_cache_file(self, mock_get):
@@ -40,6 +43,7 @@ class TestDownloadFaoFpiData:
         mock_response = Mock()
         mock_response.content = b'fake excel data'
         mock_response.raise_for_status.return_value = None
+        mock_response.headers = {'content-type': 'application/vnd.ms-excel'}
         mock_get.return_value = mock_response
         
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -55,22 +59,20 @@ class TestDownloadFaoFpiData:
     @patch('data_fetcher.time.sleep')
     def test_timeout_retry_logic(self, mock_sleep, mock_get):
         """Test timeout scenario with retry logic."""
-        mock_get.side_effect = [
-            requests.exceptions.Timeout(),
-            requests.exceptions.Timeout(),
-            requests.exceptions.Timeout(),
-            requests.exceptions.Timeout()
-        ]
+        # Provide timeout for primary URL only (6 attempts) + first attempt on fallback
+        mock_get.side_effect = [requests.exceptions.Timeout()] * 100  # Provide plenty of timeouts
         
         with tempfile.TemporaryDirectory() as temp_dir:
-            with pytest.raises(requests.exceptions.Timeout):
-                download_fao_fpi_data(cache_dir=temp_dir)
+            with pytest.raises(requests.exceptions.RequestException):
+                download_fao_fpi_data(cache_dir=temp_dir, fallback_urls=[])  # No fallback URLs to simplify test
             
-            assert mock_get.call_count == 4  # Initial + 3 retries
-            assert mock_sleep.call_count == 3  # Sleep before each retry
+            assert mock_get.call_count == 6  # Initial + 5 retries for primary URL only
+            assert mock_sleep.call_count == 5  # Sleep before each retry
             mock_sleep.assert_any_call(1)
             mock_sleep.assert_any_call(2)
             mock_sleep.assert_any_call(4)
+            mock_sleep.assert_any_call(8)
+            mock_sleep.assert_any_call(16)
 
     @patch('data_fetcher.requests.get')
     @patch('data_fetcher.time.sleep')
@@ -79,6 +81,7 @@ class TestDownloadFaoFpiData:
         mock_response = Mock()
         mock_response.content = b'fake excel data'
         mock_response.raise_for_status.return_value = None
+        mock_response.headers = {'content-type': 'application/vnd.ms-excel'}
         
         mock_get.side_effect = [
             requests.exceptions.Timeout(),
@@ -123,6 +126,7 @@ class TestDownloadFaoFpiData:
         mock_response = Mock()
         mock_response.content = b'fake excel data'
         mock_response.raise_for_status.return_value = None
+        mock_response.headers = {'content-type': 'application/vnd.ms-excel'}
         mock_get.return_value = mock_response
         
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -141,6 +145,7 @@ class TestDownloadFaoFpiData:
         mock_response = Mock()
         mock_response.content = b'fake excel data'
         mock_response.raise_for_status.return_value = None
+        mock_response.headers = {'content-type': 'application/vnd.ms-excel'}
         mock_get.return_value = mock_response
         
         with patch('data_fetcher.os.makedirs') as mock_makedirs:
@@ -155,6 +160,7 @@ class TestDownloadFaoFpiData:
         mock_response = Mock()
         mock_response.content = b'fake excel data'
         mock_response.raise_for_status.return_value = None
+        mock_response.headers = {'content-type': 'application/vnd.ms-excel'}
         mock_get.return_value = mock_response
         
         custom_url = "https://example.com/custom_data.xls"
@@ -162,7 +168,12 @@ class TestDownloadFaoFpiData:
         with tempfile.TemporaryDirectory() as temp_dir:
             download_fao_fpi_data(url=custom_url, cache_dir=temp_dir)
             
-            mock_get.assert_called_once_with(custom_url, timeout=30)
+            # Verify mock was called with custom URL and headers
+            mock_get.assert_called_once()
+            call_args = mock_get.call_args
+            assert call_args[0][0] == custom_url  # Check URL matches custom URL
+            assert call_args[1]['timeout'] == 30  # Check timeout parameter
+            assert 'headers' in call_args[1]  # Check headers were included
 
     def test_timestamped_filename_format(self):
         """Test that cache filename includes timestamp."""
@@ -171,6 +182,7 @@ class TestDownloadFaoFpiData:
                 mock_response = Mock()
                 mock_response.content = b'fake excel data'
                 mock_response.raise_for_status.return_value = None
+                mock_response.headers = {'content-type': 'application/vnd.ms-excel'}
                 mock_get.return_value = mock_response
                 
                 with patch('data_fetcher.datetime') as mock_datetime:
