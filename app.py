@@ -971,19 +971,17 @@ def main():
                         else:
                             st.info("Select indices from the sidebar to see KPI metrics")
                     else:
-                        st.warning("Selected indices not available in the data")
+                        st.warning("Please select at least one index to display")
                 else:
-                    st.warning("Please select at least one index to display")
-            else:
-                st.error("📊 Unable to display chart - no data available")
-                st.write("""
-                This could be due to:
-                - FAO server maintenance
-                - Network connectivity issues  
-                - Data format changes
-                
-                Please try refreshing the page or check back later.
-                """)
+                    st.error("📊 Unable to display chart - no data available")
+                    st.write("""
+                    This could be due to:
+                    - FAO server maintenance
+                    - Network connectivity issues  
+                    - Data format changes
+                    
+                    Please try refreshing the page or check back later.
+                    """)
         
             with col2:
                 st.header("📊 Key Metrics")
@@ -992,58 +990,57 @@ def main():
                     # Get selected column names from mapping for KPI calculation
                     selected_columns = [index_mapping[idx] for idx in selected_indices 
                                       if idx in index_mapping and index_mapping[idx] in df.columns]
-                
-                if selected_columns:
-                    try:
-                        # Calculate KPIs for selected indices
-                        kpis = calculate_kpis(df, selected_columns)
-                        
-                        # Display KPIs for each selected index
-                        for display_name, column_name in [(name, col) for name, col in index_mapping.items() 
-                                                         if col in selected_columns]:
-                            if column_name in kpis:
-                                kpi_data = kpis[column_name]
-                                
-                                # Current value with trend emoji
-                                trend_emoji = get_trend_emoji(kpi_data['trend_direction'])
-                                current_val = format_kpi_for_display(kpi_data['current_value'])
-                                
-                                # YoY change for delta
-                                yoy_change = kpi_data['yoy_change']
-                                yoy_display = format_kpi_for_display(yoy_change, 'percentage') if yoy_change else None
-                                delta_color = get_delta_color(yoy_change)
-                                
-                                st.metric(
-                                    label=f"{trend_emoji} {display_name}",
-                                    value=current_val,
-                                    delta=yoy_display,
-                                    delta_color=delta_color
-                                )
-                                
-                                # Show 12-month average as additional context
-                                if kpi_data['12m_avg'] is not None:
-                                    avg_val = format_kpi_for_display(kpi_data['12m_avg'])
-                                    st.caption(f"12-month avg: {avg_val}")
-                        
-                        # Latest data date
-                        latest_date = df['date'].iloc[-1].strftime('%Y-%m')
-                        st.write(f"📅 **Latest data:** {latest_date}")
-                        
-                    except Exception as e:
-                        st.error(f"📈 Error calculating KPIs: {str(e)}")
-                        
-                        # Fallback to basic metrics display
-                        latest = df.iloc[-1]
-                        st.metric(
-                            label="Current Food Price Index",
-                            value=f"{latest['food_price_index']:.1f}",
-                            delta=None
-                        )
+                    
+                    if selected_columns:
+                        try:
+                            # Calculate KPIs for selected indices
+                            kpis = calculate_kpis(df, selected_columns)
+                            
+                            # Display KPIs for each selected index
+                            for display_name, column_name in [(name, col) for name, col in index_mapping.items() 
+                                                             if col in selected_columns]:
+                                if column_name in kpis:
+                                    kpi_data = kpis[column_name]
+                                    
+                                    # Current value with trend emoji
+                                    trend_emoji = get_trend_emoji(kpi_data['trend_direction'])
+                                    current_val = format_kpi_for_display(kpi_data['current_value'])
+                                    
+                                    # YoY change for delta
+                                    yoy_change = kpi_data['yoy_change']
+                                    yoy_display = format_kpi_for_display(yoy_change, 'percentage') if yoy_change else None
+                                    delta_color = get_delta_color(yoy_change)
+                                    
+                                    st.metric(
+                                        label=f"{trend_emoji} {display_name}",
+                                        value=current_val,
+                                        delta=yoy_display,
+                                        delta_color=delta_color
+                                    )
+                                    
+                                    # Show 12-month average as additional context
+                                    if kpi_data['12m_avg'] is not None:
+                                        avg_val = format_kpi_for_display(kpi_data['12m_avg'])
+                                        st.caption(f"12-month avg: {avg_val}")
+                            
+                            # Latest data date
+                            latest_date = df['date'].iloc[-1].strftime('%Y-%m')
+                            st.write(f"📅 **Latest data:** {latest_date}")
+                            
+                        except Exception as e:
+                            st.error(f"📈 Error calculating KPIs: {str(e)}")
+                            
+                            # Fallback to basic metrics display
+                            latest = df.iloc[-1]
+                            st.metric(
+                                label="Current Food Price Index",
+                                value=f"{latest['food_price_index']:.1f}",
+                                delta=None
+                            )
+                    else:
+                        st.warning("📈 No valid indices selected for metrics")
                 else:
-                    st.warning("📈 No valid indices selected for metrics")
-                
-            else:
-                st.error("📈 Unable to display metrics - no data available")
+                    st.error("📈 Unable to display metrics - no data available")
         
         # Expandable Statistics Section
         if df is not None and len(df) > 0 and selected_indices:
