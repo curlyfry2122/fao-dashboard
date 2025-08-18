@@ -341,8 +341,11 @@ def detect_outliers(
         result_df['is_outlier'] = (df[column] < lower_bound) | (df[column] > upper_bound)
     
     elif method == 'zscore':
-        from scipy import stats
-        z_scores = np.abs(stats.zscore(df[column].dropna()))
+        # Calculate z-scores manually without scipy
+        data = df[column].dropna()
+        mean = data.mean()
+        std = data.std()
+        z_scores = np.abs((df[column] - mean) / std)
         result_df['is_outlier'] = z_scores > threshold
     
     elif method == 'modified_zscore':

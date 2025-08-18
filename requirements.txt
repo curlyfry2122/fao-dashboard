@@ -7,4 +7,3 @@ xlsxwriter==3.2.0
 numpy==1.26.2
 python-dateutil==2.9.0.post0
 streamlit-aggrid==0.3.4
-scipy==1.11.4
