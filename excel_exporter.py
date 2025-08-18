@@ -12,6 +12,7 @@ from io import BytesIO
 import logging
 import tempfile
 import os
+from performance_monitor import performance_monitor, performance_context
 
 if TYPE_CHECKING:
     from xlsxwriter.workbook import Workbook
@@ -66,6 +67,7 @@ class ExcelExporter:
             }
         }
     
+    @performance_monitor('excel_export', include_args=True)
     def generate_data_sheet(
         self, 
         df: pd.DataFrame, 

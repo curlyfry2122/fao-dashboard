@@ -23,9 +23,11 @@ from anomaly_detector import (
     get_anomaly_insights,
     classify_anomaly_severity
 )
+from performance_monitor import performance_monitor, performance_context
 
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
+@performance_monitor('streamlit_data_loading', include_args=False)
 def load_fao_data():
     """
     Load FAO data using DataPipeline with caching and error handling.

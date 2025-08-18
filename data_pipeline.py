@@ -12,6 +12,7 @@ import pandas as pd
 from calculate_metrics import calculate_metrics
 from data_fetcher import download_fao_fpi_data, validate_excel_structure
 from excel_parser import parse_fao_excel_data
+from performance_monitor import performance_monitor, performance_context
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -74,6 +75,7 @@ class DataPipeline:
         # Track last update timestamp
         self._last_update_timestamp = None
     
+    @performance_monitor('data_pipeline_run', include_args=True)
     def run(self) -> pd.DataFrame:
         """
         Execute the complete data pipeline.
@@ -98,22 +100,27 @@ class DataPipeline:
             logger.info(f"Fetching new data for {self.sheet_name}")
             
             # Step 1: Fetch data
-            excel_data = self.fetcher()
+            with performance_context('data_fetch', {'sheet_name': self.sheet_name}):
+                excel_data = self.fetcher()
             
             # Step 2: Validate structure
-            is_valid, error_msg = validate_excel_structure(excel_data)
-            if not is_valid:
-                raise ValueError(f"Excel validation failed: {error_msg}")
+            with performance_context('data_validation'):
+                is_valid, error_msg = validate_excel_structure(excel_data)
+                if not is_valid:
+                    raise ValueError(f"Excel validation failed: {error_msg}")
             
             # Step 3: Parse Excel data
-            excel_data.seek(0)  # Reset position after validation
-            parsed_df = parse_fao_excel_data(excel_data, self.sheet_name)
+            with performance_context('excel_parsing', {'sheet_name': self.sheet_name}):
+                excel_data.seek(0)  # Reset position after validation
+                parsed_df = parse_fao_excel_data(excel_data, self.sheet_name)
             
             # Step 4: Calculate metrics
-            processed_df = calculate_metrics(parsed_df, self.metrics)
+            with performance_context('metrics_calculation', {'metrics': self.metrics, 'rows': len(parsed_df)}):
+                processed_df = calculate_metrics(parsed_df, self.metrics)
             
             # Step 5: Save to cache
-            self._save_to_cache(processed_df)
+            with performance_context('cache_save', {'rows': len(processed_df)}):
+                self._save_to_cache(processed_df)
             
             # Update timestamp
             self._last_update_timestamp = datetime.now()

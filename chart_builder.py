@@ -9,8 +9,10 @@ from anomaly_detector import (
     identify_historical_periods,
     add_historical_period_shading
 )
+from performance_monitor import performance_monitor, performance_context
 
 
+@performance_monitor('chart_build', include_args=True)
 def build_chart(
     df: pd.DataFrame, 
     chart_type: str, 

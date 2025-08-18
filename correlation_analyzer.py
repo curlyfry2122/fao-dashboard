@@ -11,8 +11,10 @@ from typing import Dict, List, Tuple, Optional, Any
 from scipy import stats
 from io import BytesIO
 import xlsxwriter
+from performance_monitor import performance_monitor, performance_context
 
 
+@performance_monitor('correlation_calculation', include_args=True)
 def calculate_correlation_matrix(
     df: pd.DataFrame,
     indices: List[str],

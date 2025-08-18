@@ -10,10 +10,12 @@ import pandas as pd
 import numpy as np
 import logging
 from datetime import datetime, timedelta
+from performance_monitor import performance_monitor, performance_context
 
 logger = logging.getLogger(__name__)
 
 
+@performance_monitor('kpi_calculation', include_args=True)
 def calculate_kpis(
     df: pd.DataFrame, 
     selected_indices: List[str], 
